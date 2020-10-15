@@ -2,7 +2,7 @@
   <div>
     <h1>News List</h1>
     <div v-for="item in items" :key="item.title">
-      <NewsItem @updateItem="orderItems" :item="item"></NewsItem>
+      <NewsItem @updateItem="orderItems" @removeItem="removeItem(item)" :item="item"></NewsItem>
     </div>
   </div>
 </template>
@@ -18,6 +18,11 @@ export default {
     orderItems: function () {
       console.log("@orderItems");
     },
+    removeItem: function (item) {
+      if(item && item.title) {
+        this.items = this.items.filter(el => el.title !== item.title);
+      }
+    }
   },
   data: function () {
     return {

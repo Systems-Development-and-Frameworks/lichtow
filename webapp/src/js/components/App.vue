@@ -1,8 +1,12 @@
 <template>
   <div>
     <h1>News List</h1>
-    <div v-for="item in items" :key="item.title">
-      <NewsItem @updateItem="orderItems" @removeItem="removeItem(item)" :item="item"></NewsItem>
+    <div v-for="item in orderedItems" :key="item.id">
+      <NewsItem
+        @updateItem="updateItem"
+        @removeItem="removeItem(item)"
+        :item="item"
+      ></NewsItem>
     </div>
   </div>
 </template>
@@ -15,20 +19,34 @@ export default {
     NewsItem,
   },
   methods: {
-    orderItems: function () {
-      console.log("@orderItems");
+    updateItem: function () {
+      console.log("@updateItem");
     },
     removeItem: function (item) {
-      if(item && item.title) {
-        this.items = this.items.filter(el => el.title !== item.title);
+      if (item && item.id) {
+        this.items = this.items.filter((el) => el.id !== item.id);
       }
-    }
+    },
+    compareVotes: function (a, b) {
+      if (a.votes < b.votes) {
+        return 1;
+      }
+      if (a.votes > b.votes) {
+        return -1;
+      }
+      return 0;
+    },
+  },
+  computed: {
+    orderedItems: function () {
+      return this.items.sort(this.compareVotes);
+    },
   },
   data: function () {
     return {
       items: [
-        { title: "VueJS", votes: 0 },
-        { title: "Hello world!", votes: 0 },
+        { id: 1, title: "VueJS", votes: 0 },
+        { id: 2, title: "Hello world!", votes: 5 },
       ],
     };
   },

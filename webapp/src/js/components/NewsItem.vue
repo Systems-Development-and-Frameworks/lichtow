@@ -13,11 +13,9 @@ export default {
   methods: {
     upvote: function () {
       this.item.votes++;
-      this.$emit("updateItem");
     },
     downvote: function () {
       this.item.votes--;
-      this.$emit("updateItem");
     },
     remove: function () {
       this.$emit("removeItem", this.item);

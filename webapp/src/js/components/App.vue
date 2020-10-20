@@ -2,11 +2,7 @@
   <div>
     <h1>News List</h1>
     <div v-for="item in orderedItems" :key="item.id">
-      <NewsItem
-        @updateItem="updateItem"
-        @removeItem="removeItem(item)"
-        :item="item"
-      ></NewsItem>
+      <NewsItem @removeItem="removeItem(item)" :item="item"></NewsItem>
     </div>
 
     <NewsForm @createItem="createItem"></NewsForm>
@@ -23,9 +19,6 @@ export default {
     NewsForm,
   },
   methods: {
-    updateItem: function () {
-      console.log("@updateItem");
-    },
     removeItem: function (item) {
       if (item && item.id) {
         this.items = this.items.filter((el) => el.id !== item.id);
@@ -41,7 +34,15 @@ export default {
       return 0;
     },
     createItem: function (newTitle) {
-
+      let newId = this.generateNewId();
+      this.items = [...this.items, { id: newId, title: newTitle, votes: 0 }];
+    },
+    generateNewId: function () {
+      let newId = 1;
+      this.items.forEach((item) => {
+        if (item.id >= newId) newId = item.id + 1;
+      });
+      return newId;
     },
   },
   computed: {

@@ -1,9 +1,11 @@
 <template>
   <div>
-    <div>{{ item.title }} ({{ item.votes }})</div>
-    <button @click="upvote" id="upvote">Upvote</button>
-    <button @click="downvote" id="downvote">Downvote</button>
-    <button @click="remove" id="remove">Remove</button>
+    <div class="item-title">{{ item.title }} ({{ item.votes }})</div>
+    <div class="item-buttons">
+      <button @click="upvote" id="upvote">Upvote</button>
+      <button @click="downvote" id="downvote">Downvote</button>
+      <button @click="remove" id="remove">Remove</button>
+    </div>
   </div>
 </template>
 
@@ -25,4 +27,11 @@ export default {
 </script>
 
 <style>
+.item-title {
+  font-size: 24px;
+  text-align: center;
+}
+.item-buttons {
+  padding: 15px 0;
+}
 </style>

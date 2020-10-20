@@ -1,11 +1,17 @@
 <template>
-  <div>
-    <h1>News List</h1>
-    <div v-for="item in orderedItems" :key="item.id">
-      <NewsItem @removeItem="removeItem(item)" :item="item"></NewsItem>
-    </div>
+  <div class="container">
+    <div class="news-list">
+      <h1 class="news-heading">News List</h1>
+      <div v-for="item in orderedItems" :key="item.id">
+        <NewsItem
+          class="news-item"
+          @removeItem="removeItem(item)"
+          :item="item"
+        ></NewsItem>
+      </div>
 
-    <NewsForm @createItem="createItem"></NewsForm>
+      <NewsForm class="news-form" @createItem="createItem"></NewsForm>
+    </div>
   </div>
 </template>
 
@@ -62,4 +68,20 @@ export default {
 </script>
 
 <style>
+.container {
+  font-family: Arial, Helvetica, sans-serif;
+  display: flex;
+  justify-content: center;
+}
+.news-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.news-item {
+  padding: 15px 0;
+}
+.news-form {
+  padding: 50px 0;
+}
 </style>

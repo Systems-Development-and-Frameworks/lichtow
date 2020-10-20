@@ -8,15 +8,19 @@
         :item="item"
       ></NewsItem>
     </div>
+
+    <NewsForm @createItem="createItem"></NewsForm>
   </div>
 </template>
 
 <script>
 import NewsItem from "./NewsItem.vue";
+import NewsForm from "./NewsForm.vue";
 export default {
   name: "app",
   components: {
     NewsItem,
+    NewsForm,
   },
   methods: {
     updateItem: function () {
@@ -36,6 +40,9 @@ export default {
       }
       return 0;
     },
+    createItem: function (newTitle) {
+
+    },
   },
   computed: {
     orderedItems: function () {
@@ -46,7 +53,7 @@ export default {
     return {
       items: [
         { id: 1, title: "VueJS", votes: 0 },
-        { id: 2, title: "Hello world!", votes: 5 },
+        { id: 2, title: "Hello world!", votes: 0 },
       ],
     };
   },

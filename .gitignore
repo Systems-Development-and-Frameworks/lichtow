@@ -2,8 +2,7 @@
 .vscode/
 *.code-workspace
 
-webapp/public/
-webapp/package-lock.json
+webapp/dist/
 
 ### Node ###
 webapp/node_modules/

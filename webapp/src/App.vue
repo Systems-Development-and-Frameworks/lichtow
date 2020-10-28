@@ -16,8 +16,9 @@
 </template>
 
 <script>
-import NewsItem from "./NewsItem.vue";
-import NewsForm from "./NewsForm.vue";
+/* eslint-disable */
+import NewsItem from "./components/NewsItem.vue";
+import NewsForm from "./components/NewsForm.vue";
 export default {
   name: "app",
   components: {

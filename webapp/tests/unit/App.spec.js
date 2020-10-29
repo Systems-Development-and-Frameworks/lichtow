@@ -25,5 +25,29 @@ describe("App.vue", () => {
             });
             expect(wrapper.find(".empty-list-message").exists()).toBe(false);
         });
+        describe("click 'Reverse order'", () => {
+            it("toggles between ascending and descending order", () => {
+                const wrapper = shallowMount(App, {
+                    data() {
+                        return {
+                            items: [
+                                [
+                                    { id: 1, title: "VueJS", votes: 1 },
+                                    { id: 2, title: "TDD", votes: 2 },
+                                    { id: 3, title: "React", votes: 0 },
+                                ],
+                            ],
+                        };
+                    },
+                });
+                window.setTimeout(() => {
+                  expect(wrapper.vm.orderedItems).toEqual([
+                    { id: 3, title: "React", votes: 0 },
+                    { id: 1, title: "VueJS", votes: 1 },
+                    { id: 2, title: "TDD", votes: 2 },
+                  ]);
+                }, 10);
+            });
+        });
     });
 });

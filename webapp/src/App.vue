@@ -55,7 +55,11 @@ export default {
   },
   computed: {
     orderedItems: function () {
-      return this.items.sort(this.compareVotes);
+      // if(this.ascending) {
+        return this.items.sort(this.compareVotes);
+      // } else {
+        // return this.items.sort(this.compareVotes).reverse();
+      // }
     },
   },
   data: function () {

@@ -9,6 +9,7 @@
           :item="item"
         ></NewsItem>
       </div>
+      <div class="empty-list-message" v-if="items.length === 0">The list is empty :(</div>
 
       <NewsForm class="news-form" @createItem="createItem"></NewsForm>
     </div>

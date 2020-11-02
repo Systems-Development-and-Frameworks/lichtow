@@ -17,8 +17,8 @@
 </template>
 
 <script>
-import NewsItem from "./components/NewsItem.vue";
-import NewsForm from "./components/NewsForm.vue";
+import NewsItem from "../NewsItem/NewsItem.vue";
+import NewsForm from "../NewsForm/NewsForm.vue";
 export default {
   name: "app",
   components: {

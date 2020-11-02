@@ -59,6 +59,9 @@
       "json",
       "vue"
     ],
+    "testMatch": [
+      "**/src/components/**/*.spec.[jt]s?(x)"
+    ],
     "transform": {
       ".*\\.(vue)$": "vue-jest"
     },

@@ -17,7 +17,6 @@
 </template>
 
 <script>
-/* eslint-disable */
 import NewsItem from "./components/NewsItem.vue";
 import NewsForm from "./components/NewsForm.vue";
 export default {
@@ -56,7 +55,8 @@ export default {
   computed: {
     orderedItems: function () {
       // if(this.ascending) {
-        return this.items.sort(this.compareVotes);
+      let orderedItems = [ ...this.items];
+      return orderedItems.sort(this.compareVotes);
       // } else {
         // return this.items.sort(this.compareVotes).reverse();
       // }

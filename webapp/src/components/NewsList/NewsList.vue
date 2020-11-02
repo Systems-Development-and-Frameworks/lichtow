@@ -9,7 +9,10 @@
           :item="item"
         ></NewsItem>
       </div>
-      <div class="empty-list-message" v-if="items.length === 0">The list is empty :(</div>
+      <div class="empty-list-message" v-if="items.length === 0">
+        The list is empty :(
+      </div>
+      <button @click="reverseOrder">Reverse order</button>
 
       <NewsForm class="news-form" @createItem="createItem"></NewsForm>
     </div>
@@ -31,15 +34,6 @@ export default {
         this.items = this.items.filter((el) => el.id !== item.id);
       }
     },
-    compareVotes: function (a, b) {
-      if (a.votes < b.votes) {
-        return 1;
-      }
-      if (a.votes > b.votes) {
-        return -1;
-      }
-      return 0;
-    },
     createItem: function (newTitle) {
       let newId = this.generateNewId();
       this.items = [...this.items, { id: newId, title: newTitle, votes: 0 }];
@@ -51,15 +45,23 @@ export default {
       });
       return newId;
     },
+    reverseOrder: function () {
+      this.descending = !this.descending;
+    },
   },
   computed: {
     orderedItems: function () {
-      // if(this.ascending) {
-      let orderedItems = [ ...this.items];
-      return orderedItems.sort(this.compareVotes);
-      // } else {
-        // return this.items.sort(this.compareVotes).reverse();
-      // }
+      let orderedItems = [...this.items];
+      let compareVotes = (a, b) => {
+        if (a.votes < b.votes) return 1;
+        if (a.votes > b.votes) return -1;
+        return 0;
+      };
+      if (this.descending) {
+        return orderedItems.sort(compareVotes);
+      } else {
+        return orderedItems.sort(compareVotes).reverse();
+      }
     },
   },
   data: function () {
@@ -68,6 +70,7 @@ export default {
         { id: 1, title: "VueJS", votes: 0 },
         { id: 2, title: "Hello world!", votes: 0 },
       ],
+      descending: true,
     };
   },
 };

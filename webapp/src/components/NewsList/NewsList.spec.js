@@ -1,10 +1,10 @@
 import { shallowMount } from "@vue/test-utils";
-import App from "@/App.vue";
+import NewsList from "./NewsList.vue";
 
-describe("App.vue", () => {
+describe("NewsList.vue", () => {
     describe("empty", () => {
         it("renders a message when the item list is empty", () => {
-            const wrapper = shallowMount(App, {
+            const wrapper = shallowMount(NewsList, {
                 data() {
                     return {
                         items: [],
@@ -16,7 +16,7 @@ describe("App.vue", () => {
     });
     describe("not empty", () => {
         it("does not render empty list message when item list is filled", () => {
-            const wrapper = shallowMount(App, {
+            const wrapper = shallowMount(NewsList, {
                 data() {
                     return {
                         items: [[{ id: 1, title: "VueJS", votes: 0 }]],
@@ -27,7 +27,7 @@ describe("App.vue", () => {
         });
         describe("click 'Reverse order'", () => {
             it("toggles between ascending and descending order", () => {
-                const wrapper = shallowMount(App, {
+                const wrapper = shallowMount(NewsList, {
                     data() {
                         return {
                             items: [
@@ -41,11 +41,11 @@ describe("App.vue", () => {
                     },
                 });
                 window.setTimeout(() => {
-                  expect(wrapper.vm.orderedItems).toEqual([
-                    { id: 3, title: "React", votes: 0 },
-                    { id: 1, title: "VueJS", votes: 1 },
-                    { id: 2, title: "TDD", votes: 2 },
-                  ]);
+                    expect(wrapper.vm.orderedItems).toEqual([
+                        { id: 3, title: "React", votes: 0 },
+                        { id: 1, title: "VueJS", votes: 1 },
+                        { id: 2, title: "TDD", votes: 2 },
+                    ]);
                 }, 10);
             });
         });

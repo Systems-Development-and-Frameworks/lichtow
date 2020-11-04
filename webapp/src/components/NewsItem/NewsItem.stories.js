@@ -4,13 +4,9 @@ export default {
     title: "NewsItem",
     component: NewsItem,
     argTypes: {
-        item: {
-            title: "text",
-            id: "integer",
-            votes: "integer"
-        },
+        item: {},
         removeItem: { action: "removeItem" },
-        updateItem: { action: "updateItem" }
+        updateItem: { action: "updateItem" },
     },
 };
 

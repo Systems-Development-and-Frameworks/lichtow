@@ -8,7 +8,7 @@ export default {
 const Template = (args, { argTypes }) => ({
     props: Object.keys(argTypes),
     components: { NewsList },
-    template: "<NewsList v-bind=\"$props\" />",
+    template: "<NewsList v-bind='$props' />",
 });
 
 export const List = Template.bind({});

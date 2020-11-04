@@ -11,7 +11,7 @@ export default {
 const Template = (args, { argTypes }) => ({
     props: Object.keys(argTypes),
     components: { NewsForm },
-    template: "<NewsForm @createItem=\"createItem\" v-bind=\"$props\" />",
+    template: "<NewsForm @createItem='createItem' v-bind='$props' />",
 });
 
 export const TestForm = Template.bind({});

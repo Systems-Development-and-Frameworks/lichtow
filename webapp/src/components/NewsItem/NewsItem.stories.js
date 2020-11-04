@@ -9,14 +9,15 @@ export default {
             id: "integer",
             votes: "integer"
         },
-        removeItem: { action: "removeItem" }
+        removeItem: { action: "removeItem" },
+        updateItem: { action: "updateItem" }
     },
 };
 
 const Template = (args, { argTypes }) => ({
     props: Object.keys(argTypes),
     components: { NewsItem },
-    template: "<NewsItem @removeItem=\"removeItem(item)\" v-bind=\"$props\" />",
+    template: "<NewsItem @removeItem=\"removeItem(item)\" @updateItem=\"updateItem(item)\" v-bind=\"$props\" />",
 });
 
 export const TestItem = Template.bind({});

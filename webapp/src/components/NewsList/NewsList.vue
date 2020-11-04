@@ -5,6 +5,7 @@
       <div v-for="item in orderedItems" :key="item.id">
         <NewsItem
           class="news-item"
+          @updateItem="updateItem"
           @removeItem="removeItem(item)"
           :item="item"
         ></NewsItem>
@@ -29,6 +30,12 @@ export default {
     NewsForm,
   },
   methods: {
+    updateItem: function (item) {
+      if (item && item.id) {
+        this.items = this.items.filter((el) => el.id !== item.id);
+        this.items = [...this.items, item];
+      }
+    },
     removeItem: function (item) {
       if (item && item.id) {
         this.items = this.items.filter((el) => el.id !== item.id);

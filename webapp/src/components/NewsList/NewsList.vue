@@ -6,7 +6,7 @@
         <NewsItem
           class="news-item"
           @updateItem="updateItem"
-          @removeItem="removeItem(item)"
+          @removeItem="removeItem"
           :item="item"
         ></NewsItem>
       </div>

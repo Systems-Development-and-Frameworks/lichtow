@@ -2,9 +2,9 @@
   <div>
     <div class="item-title">{{ item.title }} ({{ item.votes }})</div>
     <div class="item-buttons">
-      <button @click="upvote" id="upvote">Upvote</button>
-      <button @click="downvote" id="downvote">Downvote</button>
-      <button @click="remove" id="remove">Remove</button>
+      <button @click="upvote">Upvote</button>
+      <button @click="downvote">Downvote</button>
+      <button @click="remove">Remove</button>
     </div>
   </div>
 </template>

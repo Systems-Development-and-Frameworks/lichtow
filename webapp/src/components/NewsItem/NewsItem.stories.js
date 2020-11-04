@@ -13,7 +13,7 @@ export default {
 const Template = (args, { argTypes }) => ({
     props: Object.keys(argTypes),
     components: { NewsItem },
-    template: '<NewsItem v-bind="$props" />',
+    template: "<NewsItem v-bind=\"$props\" />",
 });
 
 export const TestItem = Template.bind({});

@@ -10,10 +10,10 @@
           :item="item"
         ></NewsItem>
       </div>
-      <div class="empty-list-message" v-if="items.length === 0">
+      <div id="emptyListMessage" v-if="items.length === 0">
         The list is empty :(
       </div>
-      <button @click="reverseOrder">Reverse order</button>
+      <button id="reverseOrder" @click="reverseOrder">Reverse order</button>
 
       <NewsForm class="news-form" @createItem="createItem"></NewsForm>
     </div>

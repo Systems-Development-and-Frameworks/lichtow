@@ -1,12 +1,9 @@
-name: Node.js CI
+name: CI
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the origin/main branch
-on:
-  push:
-    branches: [ origin/main ]
-  pull_request:
-    branches: [ origin/main ]
+on: [push, pull_request]
+defaults: 
+  run: 
+    working-directory: ./webapp
 
 jobs:
   build:
@@ -14,18 +11,17 @@ jobs:
   
     strategy:
       matrix:
-        node-version: [8.x, 10.x, 12.x]
+        node-version: [10.x]
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
-      - name: Run lint and tests
+      - name: Uses Node.js ${{ matrix.node-version}}
         uses: actions/setup-node@v1
         with: 
           node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm run lint
-      - run: npm run test
-        env:
-          CI: true
+      - name: Install
+        run: npm install
+      - name: Run lint
+        run: npm run lint
+      - name: Run tests
+        run: npm run test

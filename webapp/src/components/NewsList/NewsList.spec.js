@@ -22,10 +22,8 @@ describe("NewsList.vue", () => {
     describe("empty", () => {
         it("renders a message when the item list is empty", () => {
             const wrapper = shallowMount(NewsList, {
-                data() {
-                    return {
-                        items: [],
-                    };
+                propsData: {
+                    initialItems: [],
                 },
             });
             expect(wrapper.find("#emptyListMessage").text()).toBe("The list is empty :(");
@@ -35,10 +33,8 @@ describe("NewsList.vue", () => {
         let wrapper;
         beforeEach(() => {
             wrapper = mount(NewsList, {
-                data() {
-                    return {
-                        items: testItems,
-                    };
+                propsData: {
+                    initialItems: testItems,
                 },
             });
         });

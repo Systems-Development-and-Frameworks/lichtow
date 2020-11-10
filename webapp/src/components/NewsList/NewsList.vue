@@ -59,11 +59,7 @@ export default {
   computed: {
     orderedItems: function () {
       let orderedItems = [...this.items];
-      let compareVotes = (a, b) => {
-        if (a.votes < b.votes) return 1;
-        if (a.votes > b.votes) return -1;
-        return 0;
-      };
+      let compareVotes = (a, b) => b.votes - a.votes;
       if (this.descending) {
         return orderedItems.sort(compareVotes);
       } else {

@@ -12,3 +12,8 @@ const Template = (args, { argTypes }) => ({
 });
 
 export const List = Template.bind({});
+
+export const EmptyList = Template.bind({});
+EmptyList.args = {
+    initialItems: []
+};

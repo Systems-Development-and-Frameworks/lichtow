@@ -29,6 +29,23 @@ export default {
     NewsItem,
     NewsForm,
   },
+  props: {
+    initialItems: {
+      type: Array,
+      default: () => {
+        return [
+          { id: 1, title: "VueJS", votes: 0 },
+          { id: 2, title: "Hello world!", votes: 0 },
+        ];
+      },
+    },
+  },
+  data: function () {
+    return {
+      items: [...this.initialItems],
+      descending: true,
+    };
+  },
   methods: {
     updateItem: function (item) {
       if (item && item.id) {
@@ -66,15 +83,6 @@ export default {
         return orderedItems.sort(compareVotes).reverse();
       }
     },
-  },
-  data: function () {
-    return {
-      items: [
-        { id: 1, title: "VueJS", votes: 0 },
-        { id: 2, title: "Hello world!", votes: 0 },
-      ],
-      descending: true,
-    };
   },
 };
 </script>

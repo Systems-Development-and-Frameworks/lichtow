@@ -85,5 +85,11 @@
       ".*\\.(vue)$": "vue-jest"
     },
     "preset": "@vue/cli-plugin-unit-jest"
+  },
+  "babel": {
+    "presets": [
+      "@vue/cli-plugin-babel/preset",
+      "@babel/preset-env"
+    ]
   }
 }

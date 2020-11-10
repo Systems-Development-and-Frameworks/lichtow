@@ -54,9 +54,9 @@ describe("NewsList.vue", () => {
         });
         it("renders items in descending order by default", () => {
             let newsItems = wrapper.findAllComponents(NewsItem);
-            for (let i = 0; i < newsItems.length; i++) {
-                expect(newsItems.at(i).props("item").title).toEqual(descendingTestItems[i].title);
-            }
+            expect(newsItems.wrappers.map((i) => i.props("item").title)).toEqual(
+                descendingTestItems.map((i) => i.title)
+            );
         });
         describe("Reverse order", () => {
             it("orderedItems sorts items in ascending order", () => {
@@ -71,9 +71,9 @@ describe("NewsList.vue", () => {
                     let reverseOrderButton = wrapper.find("#reverseOrder");
                     await reverseOrderButton.trigger("click");
                     let newsItems = wrapper.findAllComponents(NewsItem);
-                    for (let i = 0; i < newsItems.length; i++) {
-                        expect(newsItems.at(i).props("item").title).toEqual(ascendingTestItems[i].title);
-                    }
+                    expect(newsItems.wrappers.map((i) => i.props("item").title)).toEqual(
+                        ascendingTestItems.map((i) => i.title)
+                    );
                 });
             });
         });

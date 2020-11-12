@@ -1,21 +1,10 @@
 const { ApolloServer, gql } = require("apollo-server");
 
-const books = [
-    {
-        title: "Harry Potter and the Chamber of Secrets",
-        author: "J.K. Rowling"
-    },
-    {
-        title: "Jurassic Park",
-        author: "Michael Crichton"
-    },
-];
-
 const resolvers = {
     Query: {
-      books: () => books,
+        posts: (_sources, _args, context) => context.dataSources.postDatasource.allPosts(),
     },
-  };
+};
 
   module.exports = {
     resolvers

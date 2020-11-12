@@ -5,6 +5,9 @@
 webapp/dist/
 
 ### Node ###
+backend/node_modules/
+backend/logs
+backend/npm-debug.log*
 webapp/node_modules/
 webapp/logs
 webapp/npm-debug.log*

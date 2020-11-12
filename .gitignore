@@ -16,3 +16,5 @@ webapp/npm-debug.log*
 .DS_Store
 .AppleDouble
 .LSOverride
+
+backend/src/**/__snapshots__/

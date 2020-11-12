@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`fetches posts 1`] = `
+Object {
+  "data": Object {
+    "posts": Array [
+      Object {
+        "id": "1",
+        "title": "Vue",
+        "votes": 0,
+      },
+      Object {
+        "id": "2",
+        "title": "Jurassic Park",
+        "votes": 2,
+      },
+    ],
+  },
+  "errors": undefined,
+  "extensions": undefined,
+  "http": Object {
+    "headers": Headers {
+      Symbol(map): Object {},
+    },
+  },
+}
+`;

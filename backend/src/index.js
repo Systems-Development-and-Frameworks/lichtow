@@ -1,19 +1,7 @@
-import { ApolloServer, gql } from "apollo-server";
-import typeDefs from "./typeDefs";
-import resolvers  from "./resolvers";
-import { PostDataSource } from "./posts/datasource";
+import Server from "./server";
 
-const dataSources = {
-    postDatasource: new PostDataSource(),
-};
 
-const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    dataSources: () => {
-        return dataSources;
-    },
-});
+const server = new Server();
 
 server.listen().then(({ url }) => {
     console.log(`🚀  Server ready at ${url}`);

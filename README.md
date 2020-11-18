@@ -6,7 +6,25 @@ at `Hochschule für Technik und Wirtschaft` in Berlin.
 In this course we explore a lot of different technologies in the context of full stack development.
 Besides we focus on test driven development.
 
-## Technologies used in this repo
-* Node.js
-* etc
-* etc
+# Frontend
+
+## Project setup
+```
+cd webapp
+npm install
+```
+
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
+
+### Compiles and minifies for production
+```
+npm run build
+```
+
+### Lints and fixes files
+```
+npm run lint
+```

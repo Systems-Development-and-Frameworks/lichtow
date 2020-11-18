@@ -5,10 +5,15 @@
       <div v-for="item in orderedItems" :key="item.id">
         <NewsItem
           class="news-item"
-          @removeItem="removeItem(item)"
+          @updateItem="updateItem"
+          @removeItem="removeItem"
           :item="item"
         ></NewsItem>
       </div>
+      <div id="emptyListMessage" v-if="items.length === 0">
+        The list is empty :(
+      </div>
+      <button id="reverseOrder" @click="reverseOrder">Reverse order</button>
 
       <NewsForm class="news-form" @createItem="createItem"></NewsForm>
     </div>
@@ -16,29 +21,42 @@
 </template>
 
 <script>
-/* eslint-disable */
-import NewsItem from "./components/NewsItem.vue";
-import NewsForm from "./components/NewsForm.vue";
+import NewsItem from "../NewsItem/NewsItem.vue";
+import NewsForm from "../NewsForm/NewsForm.vue";
 export default {
   name: "app",
   components: {
     NewsItem,
     NewsForm,
   },
+  props: {
+    initialItems: {
+      type: Array,
+      default: () => {
+        return [
+          { id: 1, title: "VueJS", votes: 0 },
+          { id: 2, title: "Hello world!", votes: 0 },
+        ];
+      },
+    },
+  },
+  data: function () {
+    return {
+      items: [...this.initialItems],
+      descending: true,
+    };
+  },
   methods: {
+    updateItem: function (item) {
+      if (item && item.id) {
+        this.items = this.items.filter((el) => el.id !== item.id);
+        this.items = [...this.items, item];
+      }
+    },
     removeItem: function (item) {
       if (item && item.id) {
         this.items = this.items.filter((el) => el.id !== item.id);
       }
-    },
-    compareVotes: function (a, b) {
-      if (a.votes < b.votes) {
-        return 1;
-      }
-      if (a.votes > b.votes) {
-        return -1;
-      }
-      return 0;
     },
     createItem: function (newTitle) {
       let newId = this.generateNewId();
@@ -51,19 +69,20 @@ export default {
       });
       return newId;
     },
+    reverseOrder: function () {
+      this.descending = !this.descending;
+    },
   },
   computed: {
     orderedItems: function () {
-      return this.items.sort(this.compareVotes);
+      let orderedItems = [...this.items];
+      let compareVotes = (a, b) => b.votes - a.votes;
+      if (this.descending) {
+        return orderedItems.sort(compareVotes);
+      } else {
+        return orderedItems.sort(compareVotes).reverse();
+      }
     },
-  },
-  data: function () {
-    return {
-      items: [
-        { id: 1, title: "VueJS", votes: 0 },
-        { id: 2, title: "Hello world!", votes: 0 },
-      ],
-    };
   },
 };
 </script>

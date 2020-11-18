@@ -1,8 +1,8 @@
 <template>
   <div>
     <form onsubmit="event.preventDefault();">
-      <input type="text" v-model="newTitle" placeholder="New Title" />
-      <input type="submit" value="Create" @click="submit" />
+      <input type="text" aria-label="Title" v-model="newTitle" placeholder="New Title" />
+      <input type="submit" aria-label="Create" value="Create" @click="submit" />
     </form>
   </div>
 </template>

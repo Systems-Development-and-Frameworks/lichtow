@@ -1,6 +1,6 @@
 const { ApolloServer, gql } = require("apollo-server");
-const { typeDefs } = require("./posts/typeDefs");
-const { resolvers } = require("./posts/resolvers");
+const { typeDefs } = require("./typeDefs");
+const { resolvers } = require("./resolvers");
 const { PostDataSource } = require("./posts/datasource");
 
 const dataSources = {

@@ -1,7 +1,7 @@
 const { ApolloServer, gql } = require("apollo-server");
 const { createTestClient } = require("apollo-server-testing");
-const { typeDefs } = require("./typeDefs");
-const { resolvers } = require("./resolvers");
+const { typeDefs } = require("../typeDefs");
+const { resolvers } = require("../resolvers");
 const { PostDataSource } = require("./datasource");
 
 const dataSources = {

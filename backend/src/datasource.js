@@ -8,21 +8,10 @@ export class Post {
     }
 }
 
-export class PostDataSource extends DataSource {
+export class InMemoryDataSource extends DataSource {
     constructor() {
         super();
-        this.posts = [
-            {
-                id: 1,
-                title: "Vue",
-                votes: 0,
-            },
-            {
-                id: 2,
-                title: "Jurassic Park",
-                votes: 2,
-            },
-        ];
+        this.posts = [];
     }
 
     initialize({ context }) {}

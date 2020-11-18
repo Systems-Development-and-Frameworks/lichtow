@@ -19,6 +19,10 @@ export class InMemoryDataSource extends DataSource {
     allPosts() {
         return this.posts;
     }
-    createPost(data) {}
+    createPost(data) {
+        const newPost = new Post(data);
+        this.posts.push(newPost);
+        return newPost;
+    }
     upvotePost(id, user) {}
 }

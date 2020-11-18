@@ -1,8 +1,8 @@
-const { ApolloServer, gql } = require("apollo-server");
-const { createTestClient } = require("apollo-server-testing");
-const { typeDefs } = require("../typeDefs");
-const { resolvers } = require("../resolvers");
-const { PostDataSource } = require("./datasource");
+import  { ApolloServer, gql } from "apollo-server";
+import  { createTestClient } from "apollo-server-testing";
+import  typeDefs  from "../typeDefs";
+import  resolvers  from "../resolvers";
+import  { PostDataSource } from "./datasource";
 
 const dataSources = {
     postDatasource: new PostDataSource(),

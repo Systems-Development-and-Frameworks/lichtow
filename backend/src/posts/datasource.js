@@ -1,6 +1,14 @@
-const { DataSource } = require("apollo-datasource");
+import { DataSource } from "apollo-datasource";
+import crypto from "crypto";
 
-class PostDataSource extends DataSource {
+export class Post {
+    constructor(data) {
+        Object.assign(this, data);
+        this.id = crypto.randomBytes(16).toString("hex");
+    }
+}
+
+export class PostDataSource extends DataSource {
     constructor() {
         super();
         this.posts = [
@@ -24,7 +32,4 @@ class PostDataSource extends DataSource {
     }
     createPost(data) {}
     upvotePost(id, user) {}
-}
-module.exports = {
-    PostDataSource
 }

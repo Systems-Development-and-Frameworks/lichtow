@@ -45,3 +45,36 @@ describe("queries", () => {
         });
     });
 });
+
+describe("mutations", () => {
+    describe("WRITE_POST", () => {
+        const action = () => mutate({ mutation: WRITE_POST, variables: { title: "Some post" } });
+        const WRITE_POST = gql`
+            mutation($title: String!) {
+                write(title: $title) {
+                    id
+                    title
+                }
+            }
+        `;
+
+        it("adds a post to db.posts", async () => {
+            expect(db.posts).toHaveLength(0);
+            await action();
+            expect(db.posts).toHaveLength(1);
+        });
+
+        it("calls db.createPost", async () => {
+            db.createPost = jest.fn(() => {});
+            await action();
+            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post" });
+        });
+
+        it("responds with created post", async () => {
+            await expect(action()).resolves.toMatchObject({
+                errors: undefined,
+                data: { write: { title: "Some post", id: expect.any(String) } },
+            });
+        });
+    });
+})

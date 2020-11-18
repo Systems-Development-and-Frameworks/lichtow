@@ -5,9 +5,9 @@ name: CI Backend
 # events but only for the origin/main branch
 on:
   push:
-    branches: [ origin/main, exercise3 ]
+    branches: [ origin/main, exercise-3 ]
   pull_request:
-    branches: [ origin/main, exercise3 ]
+    branches: [ origin/main, exercise-3 ]
 
 defaults:
   run:

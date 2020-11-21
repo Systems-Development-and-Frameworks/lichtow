@@ -5,7 +5,7 @@ const typeDefs = gql`
         id: ID!
         title: String!
         votes: Int!
-        author: User!
+        # author: User!
     }
 
     type User {
@@ -36,7 +36,7 @@ const typeDefs = gql`
 
         # ⚠️ FIXME in exercise #4
         # mock author until we have authentication
-        author: UserInput!
+        # author: UserInput!
     }
 
     input UserInput {

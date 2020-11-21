@@ -1,8 +1,7 @@
-import  { ApolloServer, gql } from "apollo-server";
-import  { createTestClient } from "apollo-server-testing";
-import  Server  from "./server";
-import  { InMemoryDataSource, Post } from "./datasource";
-
+import { ApolloServer, gql } from "apollo-server";
+import { createTestClient } from "apollo-server-testing";
+import Server from "./server";
+import { InMemoryDataSource, Post } from "./datasource";
 
 let db;
 beforeEach(() => {
@@ -39,7 +38,7 @@ describe("queries", () => {
             it("returns posts", async () => {
                 await expect(query({ query: POSTS })).resolves.toMatchObject({
                     errors: undefined,
-                    data: { posts: [{ title: "Some post", id: expect.any(String) }] },
+                    data: { posts: [{ id: expect.any(String), title: "Some post" }] },
                 });
             });
         });
@@ -48,12 +47,13 @@ describe("queries", () => {
 
 describe("mutations", () => {
     describe("WRITE_POST", () => {
-        const action = () => mutate({ mutation: WRITE_POST, variables: { title: "Some post" } });
+        const action = () => mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post" } } });
         const WRITE_POST = gql`
-            mutation($title: String!) {
-                write(title: $title) {
+            mutation($post: PostInput!) {
+                write(post: $post) {
                     id
                     title
+                    votes
                 }
             }
         `;
@@ -73,8 +73,8 @@ describe("mutations", () => {
         it("responds with created post", async () => {
             await expect(action()).resolves.toMatchObject({
                 errors: undefined,
-                data: { write: { title: "Some post", id: expect.any(String) } },
+                data: { write: { title: "Some post", id: expect.any(String), votes: 0 } },
             });
         });
     });
-})
+});

@@ -34,7 +34,7 @@ describe("queries", () => {
         const USERS = gql`
             query {
                 users {
-                    name,
+                    name
                     posts {
                         title
                     }
@@ -42,10 +42,42 @@ describe("queries", () => {
             }
         `;
 
-        it("given users in the database with empty posts array", async () => {
+        it("returns all users with no posts", async () => {
             await expect(query({ query: USERS })).resolves.toMatchObject({
                 errors: undefined,
-                data: { users: [{ name: "Jonas", posts: [] }, { name: "Paula", posts: [] }] },
+                data: {
+                    users: [
+                        { name: "Jonas", posts: [] },
+                        { name: "Paula", posts: [] },
+                    ],
+                },
+            });
+        });
+        describe("WRITE_POST", () => {
+            const action = () =>
+                mutate({
+                    mutation: WRITE_POST,
+                    variables: { post: { title: "Some post", author: { name: "Jonas" } } },
+                });
+            const WRITE_POST = gql`
+                mutation($post: PostInput!) {
+                    write(post: $post) {
+                        author {
+                            name
+                            posts {
+                                title
+                            }
+                        }
+                    }
+                }
+            `;
+            it("adds post to user", async () => {
+                await expect(action()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        write: { author: { name: "Jonas", posts: [{ title: "Some post" }] } },
+                    },
+                });
             });
         });
     });

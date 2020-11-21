@@ -80,7 +80,7 @@ describe("mutations", () => {
                 data: { write: { title: "Some post", id: expect.any(String), votes: 0, author: { name: "Jonas" } } },
             });
         });
-        //test that post has been added to list of users posts (check length of post lists ansd whether it conrains the new post)
+        //test that post has been added to list of users posts (check length of post lists ansd whether it contains the new post)
         //test that error occurs when author is invalid
     });
 });

@@ -25,6 +25,10 @@ export class InMemoryDataSource extends DataSource {
 
     initialize({ context }) {}
 
+    allUsers() {
+        return this.users;
+    }
+
     allPosts() {
         return this.posts;
     }

@@ -20,7 +20,7 @@ export class InMemoryDataSource extends DataSource {
     constructor() {
         super();
         this.posts = [];
-        this.users = [new User("Jonas"), new User("Paula")];
+        this.users = [];
     }
 
     initialize({ context }) {}

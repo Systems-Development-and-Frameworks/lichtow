@@ -1,10 +1,11 @@
 import { ApolloServer, gql } from "apollo-server";
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
-import { InMemoryDataSource, Post } from "./datasource";
+import { InMemoryDataSource, Post, User } from "./datasource";
 
 const db = new InMemoryDataSource();
 db.posts.push(new Post({title: "Test Post"}));
+db.users.push(new User("Jonas"), new User("Paula"));
 
 const dataSources = () => ({ db });
 

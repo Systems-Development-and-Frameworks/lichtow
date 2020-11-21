@@ -7,7 +7,8 @@ const resolvers = {
     Mutation: {
         write: (parent, args, context) => {
             const newPost =  {
-                title: args.post.title
+                title: args.post.title,
+                authorName: args.post.author.name
             }
             return context.dataSources.db.createPost(newPost);
         }

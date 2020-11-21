@@ -47,13 +47,17 @@ describe("queries", () => {
 
 describe("mutations", () => {
     describe("WRITE_POST", () => {
-        const action = () => mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post" } } });
+        const action = () =>
+            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "Jonas" } } } });
         const WRITE_POST = gql`
             mutation($post: PostInput!) {
                 write(post: $post) {
                     id
                     title
                     votes
+                    author {
+                        name
+                    }
                 }
             }
         `;
@@ -67,14 +71,16 @@ describe("mutations", () => {
         it("calls db.createPost", async () => {
             db.createPost = jest.fn(() => {});
             await action();
-            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post" });
+            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post", authorName: "Jonas" });
         });
 
         it("responds with created post", async () => {
             await expect(action()).resolves.toMatchObject({
                 errors: undefined,
-                data: { write: { title: "Some post", id: expect.any(String), votes: 0 } },
+                data: { write: { title: "Some post", id: expect.any(String), votes: 0, author: { name: "Jonas" } } },
             });
         });
+        //test that post has been added to list of users posts (check length of post lists ansd whether it conrains the new post)
+        //test that error occurs when author is invalid
     });
 });

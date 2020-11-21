@@ -1,11 +1,12 @@
 import { ApolloServer, gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { InMemoryDataSource, Post } from "./datasource";
+import { InMemoryDataSource, User } from "./datasource";
 
 let db;
 beforeEach(() => {
     db = new InMemoryDataSource();
+    db.users.push(new User("Jonas"), new User("Paula"));
 });
 
 const server = new Server({ dataSources: () => ({ db }) });

@@ -5,7 +5,12 @@ const resolvers = {
         posts: (parent, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
-        write: (parent, args, context) => context.dataSources.db.createPost(args)
+        write: (parent, args, context) => {
+            const newPost =  {
+                title: args.post.title
+            }
+            return context.dataSources.db.createPost(newPost);
+        }
     }
 };
 

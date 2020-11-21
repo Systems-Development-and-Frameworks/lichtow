@@ -3,8 +3,9 @@ import crypto from "crypto";
 
 export class Post {
     constructor(data) {
-        Object.assign(this, data);
         this.id = crypto.randomBytes(16).toString("hex");
+        this.votes = 0;
+        Object.assign(this, data);
     }
 }
 
@@ -20,9 +21,11 @@ export class InMemoryDataSource extends DataSource {
         return this.posts;
     }
     createPost(data) {
-        const newPost = new Post(data);
-        this.posts.push(newPost);
-        return newPost;
+        return new Promise((resolve) => {
+            const newPost = new Post(data);
+            this.posts.push(newPost);
+            resolve(newPost);
+        });
     }
     upvotePost(id, user) {}
 }

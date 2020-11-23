@@ -28,7 +28,7 @@ const typeDefs = gql`
         upvote(id: ID!, voter: UserInput!): Post
 
         # 🚀 OPTIONAL
-        # downvote(id: ID!, voter: UserInput!): Post
+        downvote(id: ID!, voter: UserInput!): Post
     }
 
     input PostInput {

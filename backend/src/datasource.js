@@ -45,6 +45,12 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(newPost);
     }
 
+    deletePost(id) {
+        const deletedPost = this.getPost(id);
+        this.posts = this.posts.filter((post) => post.id !== id);
+        return Promise.resolve(deletedPost);
+    }
+
     upvotePost(id, user) {
         return this.getPost(id).then((post) => {
             post.voters.set(user, 1);

@@ -1,7 +1,7 @@
-import { ApolloServer, gql } from "apollo-server";
+import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { InMemoryDataSource, User } from "./datasource";
+import { InMemoryDataSource, User, Post } from "./datasource";
 
 let db;
 beforeEach(() => {
@@ -77,6 +77,38 @@ describe("queries", () => {
                     errors: undefined,
                     data: {
                         write: { author: { name: "Jonas", posts: [{ title: "Some post" }] } },
+                    },
+                });
+            });
+        });
+        describe("DELETE_POST", () => {
+            let postId;
+            beforeEach(() => {
+                db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
+                postId = db.posts[0].id;
+            });
+            const deletePost = () =>
+                mutate({
+                    mutation: DELETE_POST,
+                    variables: { id: postId },
+                });
+            const DELETE_POST = gql`
+                mutation($id: ID!) {
+                    delete(id: $id) {
+                        author {
+                            name
+                            posts {
+                                title
+                            }
+                        }
+                    }
+                }
+            `;
+            it("removes post from user", async () => {
+                await expect(deletePost()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        delete: { author: { name: "Jonas", posts: [] } },
                     },
                 });
             });

@@ -1,5 +1,4 @@
 import { DataSource } from "apollo-datasource";
-import { rejects } from "assert";
 import crypto from "crypto";
 
 export class Post {
@@ -47,6 +46,7 @@ export class InMemoryDataSource extends DataSource {
     }
 
     upvotePost(id, user) {
+        console.log("UPVOTE_POST");
         return this.getPost(id).then((post) => {
             post.voters.set(user, 1);
             return post;

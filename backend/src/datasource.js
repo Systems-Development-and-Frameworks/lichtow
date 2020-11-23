@@ -5,7 +5,7 @@ import crypto from "crypto";
 export class Post {
     constructor(data) {
         this.id = crypto.randomBytes(16).toString("hex");
-        this.votes = 0;
+        this.voters = new Map();
         Object.assign(this, data);
     }
 }
@@ -35,11 +35,28 @@ export class InMemoryDataSource extends DataSource {
     allPosts() {
         return Promise.resolve(this.posts);
     }
+
+    getPost(id) {
+        return Promise.resolve(this.posts.find((post) => post.id === id));
+    }
+
     createPost(data) {
         const newPost = new Post(data);
         this.posts.push(newPost);
         return Promise.resolve(newPost);
     }
 
-    upvotePost(id, user) {}
+    upvotePost(id, user) {
+        return this.getPost(id).then((post) => {
+            post.voters.set(user, 1);
+            return post;
+        });
+    }
+
+    downvotePost(id, user) {
+        return this.getPost(id).then((post) => {
+            post.voters.set(user, -1);
+            return post;
+        });
+    }
 }

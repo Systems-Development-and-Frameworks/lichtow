@@ -72,7 +72,7 @@ describe("mutations", () => {
         it("calls db.createPost", async () => {
             db.createPost = jest.fn(() => {});
             await action();
-            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post", authorName: "Jonas" });
+            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post", author: "Jonas" });
         });
 
         it("responds with created post", async () => {

@@ -12,7 +12,6 @@ export class Post {
 export class User {
     constructor(name) {
         this.name = name;
-        this.posts = [];
     }
 }
 
@@ -26,28 +25,20 @@ export class InMemoryDataSource extends DataSource {
     initialize({ context }) {}
 
     allUsers() {
-        return this.users;
+        return Promise.resolve(this.users);
+    }
+
+    getUser(name) {
+        return Promise.resolve(this.users.find((user) => user.name === name));
     }
 
     allPosts() {
-        return this.posts;
+        return Promise.resolve(this.posts);
     }
     createPost(data) {
-        return new Promise((resolve, reject) => {
-            const authorIndex = this.users.findIndex(user => user.name === data.authorName);
-            if(authorIndex >= 0) {
-                const newPostData = {
-                    title: data.title,
-                    author: this.users[authorIndex],
-                };
-                const newPost = new Post(newPostData);
-                this.posts.push(newPost);
-                this.users[authorIndex].posts.push(newPost);
-                resolve(newPost);
-            } else {
-                reject();
-            }
-        });
+        const newPost = new Post(data);
+        this.posts.push(newPost);
+        return Promise.resolve(newPost);
     }
 
     upvotePost(id, user) {}

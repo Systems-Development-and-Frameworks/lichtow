@@ -4,7 +4,7 @@ import resolvers from "./resolvers";
 import { InMemoryDataSource, Post, User } from "./datasource";
 
 const db = new InMemoryDataSource();
-db.posts.push(new Post({title: "Test Post"}));
+db.posts.push(new Post({ title: "Test Post", author: "Jonas" }));
 db.users.push(new User("Jonas"), new User("Paula"));
 
 const dataSources = () => ({ db });

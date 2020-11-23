@@ -6,7 +6,7 @@ const resolvers = {
         posts: (parent, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
-        async write(parent, args, context) {
+        write: async (parent, args, context) => {
             const newPost = {
                 title: args.post.title,
                 authorName: args.post.author.name,
@@ -15,7 +15,6 @@ const resolvers = {
             if (!author) {
                 throw new UserInputError("Invalid user", { invalidArgs: newPost.authorName });
             }
-            // console.log(context.dataSources.db.createPost(newPost));
             return await context.dataSources.db.createPost(newPost);
         },
         upvote: async (parent, args, context) => {
@@ -27,12 +26,11 @@ const resolvers = {
             if (!post) {
                 throw new UserInputError("Invalid post", { invalidArgs: args.id });
             }
-            // console.log(context.dataSources.db.upvotePost(args.id, args.voter.name));
             return await context.dataSources.db.upvotePost(args.id, args.voter.name);
         },
-        async downvote(parent, args, context) {
-            const upvoter = await context.dataSources.db.getUser(args.voter.name);
-            if (!upvoter) {
+        downvote: async (parent, args, context) => {
+            const downvoter = await context.dataSources.db.getUser(args.voter.name);
+            if (!downvoter) {
                 throw new UserInputError("Invalid user", { invalidArgs: args.voter.name });
             }
             const post = await context.dataSources.db.getPost(args.id);
@@ -43,17 +41,17 @@ const resolvers = {
         },
     },
     Post: {
-        async author(obj, args, context) {
+        author: async (obj, args, context) => {
             return await context.dataSources.db.getUser(obj.authorName);
         },
-        async votes(obj, args, context) {
+        votes: async (obj, args, context) => {
             let values = Array.from(obj.voters.values());
             let votes = values.reduce((sum, number) => sum + number, 0);
             return votes;
         },
     },
     User: {
-        async posts(obj, args, context) {
+        posts: async (obj, args, context) => {
             const allPosts = await context.dataSources.db.allPosts();
             return allPosts.filter((post) => post.authorName === obj.name);
         },

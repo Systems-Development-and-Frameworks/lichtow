@@ -217,4 +217,62 @@ describe("mutations", () => {
             });
         });
     });
+    describe("DELETE_POST", () => {
+        let postId;
+        beforeEach(() => {
+            db.posts = [
+                new Post({ title: "Some post", authorName: "Jonas" }),
+                new Post({ title: "Some other post", authorName: "Jonas" }),
+            ];
+            postId = db.posts[0].id;
+        });
+        const DELETE_POST = gql`
+            mutation($id: ID!) {
+                delete(id: $id) {
+                    title
+                    id
+                    author {
+                        name
+                    }
+                    votes
+                }
+            }
+        `;
+        const deletePost = () => mutate({ mutation: DELETE_POST, variables: { id: postId } });
+
+        it("calls db.deletePost", async () => {
+            db.deletePost = jest.fn(() => {});
+            await deletePost();
+            expect(db.deletePost).toHaveBeenCalledWith(postId);
+        });
+
+        it("throws error when post id invalid", async () => {
+            const invalidId = () => mutate({ mutation: DELETE_POST, variables: { id: 123 } });
+            const {
+                errors: [error],
+            } = await invalidId();
+            expect(error.message).toEqual("Invalid post");
+        });
+
+        it("removes a post from db.posts", async () => {
+            expect(db.posts).toHaveLength(2);
+            await deletePost();
+            expect(db.posts).toHaveLength(1);
+        });
+        it("does not remove same post twice from db.posts", async () => {
+            expect(db.posts).toHaveLength(2);
+            await deletePost();
+            await deletePost();
+            expect(db.posts).toHaveLength(1);
+        });
+
+        it("returns post that is deleted", async () => {
+            await expect(deletePost()).resolves.toMatchObject({
+                errors: undefined,
+                data: {
+                    delete: { title: "Some post", id: postId, votes: 0, author: { name: "Jonas" } },
+                },
+            });
+        });
+    });
 });

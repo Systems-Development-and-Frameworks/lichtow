@@ -17,27 +17,39 @@ const resolvers = {
             }
             return await context.dataSources.db.createPost(newPost);
         },
-        upvote: async (parent, args, context) => {
-            const upvoter = await context.dataSources.db.getUser(args.voter.name);
-            if (!upvoter) {
-                throw new UserInputError("Invalid user", { invalidArgs: args.voter.name });
-            }
-            const post = await context.dataSources.db.getPost(args.id);
+        delete: async (parent, args, context) => {
+            const id = args.id;
+            const post = await context.dataSources.db.getPost(id);
             if (!post) {
-                throw new UserInputError("Invalid post", { invalidArgs: args.id });
+                throw new UserInputError("Invalid post", { invalidArgs: id });
             }
-            return await context.dataSources.db.upvotePost(args.id, args.voter.name);
+            return await context.dataSources.db.deletePost(id);
+        },
+        upvote: async (parent, args, context) => {
+            const name = args.voter.name;
+            const id = args.id;
+            const upvoter = await context.dataSources.db.getUser(name);
+            if (!upvoter) {
+                throw new UserInputError("Invalid user", { invalidArgs: name });
+            }
+            const post = await context.dataSources.db.getPost(id);
+            if (!post) {
+                throw new UserInputError("Invalid post", { invalidArgs: id });
+            }
+            return await context.dataSources.db.upvotePost(id, name);
         },
         downvote: async (parent, args, context) => {
-            const downvoter = await context.dataSources.db.getUser(args.voter.name);
+            const name = args.voter.name;
+            const id = args.id;
+            const downvoter = await context.dataSources.db.getUser(name);
             if (!downvoter) {
-                throw new UserInputError("Invalid user", { invalidArgs: args.voter.name });
+                throw new UserInputError("Invalid user", { invalidArgs: name });
             }
-            const post = await context.dataSources.db.getPost(args.id);
+            const post = await context.dataSources.db.getPost(id);
             if (!post) {
-                throw new UserInputError("Invalid post", { invalidArgs: args.id });
+                throw new UserInputError("Invalid post", { invalidArgs: id });
             }
-            return await context.dataSources.db.downvotePost(args.id, args.voter.name);
+            return await context.dataSources.db.downvotePost(id, name);
         },
     },
     Post: {

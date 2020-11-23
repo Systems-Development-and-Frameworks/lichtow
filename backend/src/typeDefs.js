@@ -21,7 +21,7 @@ const typeDefs = gql`
     type Mutation {
         write(post: PostInput!): Post
         # 🚀 OPTIONAL
-        # delete(id: ID!): Post
+        delete(id: ID!): Post
 
         # ⚠️ FIXME in exercise #4
         # mock voter until we have authentication

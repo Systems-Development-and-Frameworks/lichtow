@@ -2,6 +2,7 @@ import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
 import { InMemoryDataSource, User, Post } from "./datasource";
+import { isTypeSystemDefinitionNode } from "graphql";
 
 let db;
 beforeEach(() => {
@@ -123,10 +124,7 @@ describe("mutations", () => {
             };
 
             it("calls db.upvotePost", async () => {
-                db.upvotePost = jest.fn((id, userInput) => {
-                    console.log(id);
-                    console.log(userInput);
-                });
+                db.upvotePost = jest.fn(() => {});
                 await upvote();
                 expect(db.upvotePost).toHaveBeenCalledWith(postId, "Jonas");
             });
@@ -157,11 +155,19 @@ describe("mutations", () => {
                 await expect(upvote()).resolves.toMatchObject({
                     errors: undefined,
                     data: {
-                        upvote: { title: "Some post", id: expect.any(String), votes: 1, author: { name: "Jonas" } },
+                        upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
                     },
                 });
             });
-            // it("does not upvote post again when already upvoted by same user", async () => {});
+            it("does not upvote post again when already upvoted by same user", async () => {
+                await upvote();
+                await expect(upvote()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
+                    },
+                });
+            });
         });
         describe("DOWNVOTE_POST", () => {
             const DOWNVOTE_POST = gql`
@@ -177,14 +183,14 @@ describe("mutations", () => {
                 }
             `;
 
-            it("upvotes post", async () => {
+            it("downvotes post", async () => {
                 const downvote = () => {
                     mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
                 };
                 await expect(downvote()).resolves.toMatchObject({
                     errors: undefined,
                     data: {
-                        upvote: { title: "Some post", id: expect.any(String), votes: -1, author: { name: "Jonas" } },
+                        upvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
                     },
                 });
             });

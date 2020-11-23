@@ -46,7 +46,6 @@ export class InMemoryDataSource extends DataSource {
     }
 
     upvotePost(id, user) {
-        console.log("UPVOTE_POST");
         return this.getPost(id).then((post) => {
             post.voters.set(user, 1);
             return post;

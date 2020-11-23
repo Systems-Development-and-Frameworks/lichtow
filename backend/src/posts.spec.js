@@ -1,4 +1,4 @@
-import { ApolloServer, gql } from "apollo-server";
+import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
 import { InMemoryDataSource, User, Post } from "./datasource";
@@ -20,10 +20,13 @@ describe("queries", () => {
                 posts {
                     id
                     title
+                    votes
+                    author {
+                        name
+                    }
                 }
             }
         `;
-
         it("returns empty array", async () => {
             await expect(query({ query: POSTS })).resolves.toMatchObject({
                 errors: undefined,
@@ -33,13 +36,15 @@ describe("queries", () => {
 
         describe("given posts in the database", () => {
             beforeEach(() => {
-                db.posts = [new Post({ title: "Some post" })];
+                db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
             });
 
             it("returns posts", async () => {
                 await expect(query({ query: POSTS })).resolves.toMatchObject({
                     errors: undefined,
-                    data: { posts: [{ id: expect.any(String), title: "Some post" }] },
+                    data: {
+                        posts: [{ id: expect.any(String), title: "Some post", votes: 0, author: { name: "Jonas" } }],
+                    },
                 });
             });
         });
@@ -48,8 +53,6 @@ describe("queries", () => {
 
 describe("mutations", () => {
     describe("WRITE_POST", () => {
-        const action = () =>
-            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "Jonas" } } } });
         const WRITE_POST = gql`
             mutation($post: PostInput!) {
                 write(post: $post) {
@@ -62,6 +65,17 @@ describe("mutations", () => {
                 }
             }
         `;
+        const action = () =>
+            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "Jonas" } } } });
+        const invalidUser = () =>
+            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "INVALID" } } } });
+
+        it("throws error when user is invalid", async () => {
+            const {
+                errors: [error],
+            } = await invalidUser();
+            expect(error.message).toEqual("Invalid user");
+        });
 
         it("adds a post to db.posts", async () => {
             expect(db.posts).toHaveLength(0);
@@ -79,6 +93,100 @@ describe("mutations", () => {
             await expect(action()).resolves.toMatchObject({
                 errors: undefined,
                 data: { write: { title: "Some post", id: expect.any(String), votes: 0, author: { name: "Jonas" } } },
+            });
+        });
+    });
+    describe("VOTE_POST", () => {
+        let postId;
+        beforeEach(() => {
+            db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
+            postId = db.posts[0].id;
+        });
+        describe("UPVOTE_POST", () => {
+            const UPVOTE_POST = gql`
+                mutation($id: ID!, $voter: UserInput!) {
+                    upvote(id: $id, voter: $voter) {
+                        title
+                        id
+                        author {
+                            name
+                        }
+                        votes
+                    }
+                }
+            `;
+            const upvote = () => {
+                mutate({
+                    mutation: UPVOTE_POST,
+                    variables: { id: postId, voter: { name: "Jonas" } },
+                });
+            };
+
+            it("calls db.upvotePost", async () => {
+                db.upvotePost = jest.fn((id, userInput) => {
+                    console.log(id);
+                    console.log(userInput);
+                });
+                await upvote();
+                expect(db.upvotePost).toHaveBeenCalledWith(postId, "Jonas");
+            });
+
+            it("throws error when post id invalid", async () => {
+                const invalidId = () => {
+                    mutate({ mutation: UPVOTE_POST, variables: { id: 123, voter: { name: "Jonas" } } });
+                };
+                const {
+                    errors: [error],
+                } = await invalidId();
+                expect(error.message).toEqual("Invalid post");
+            });
+            it("throws error when user is invalid", async () => {
+                const invalidUser = () => {
+                    mutate({
+                        mutation: UPVOTE_POST,
+                        variables: { id: postId, voter: { name: "INVALID" } },
+                    });
+                };
+                const {
+                    errors: [error],
+                } = await invalidUser();
+                expect(error.message).toEqual("Invalid user");
+            });
+
+            it("upvotes post", async () => {
+                await expect(upvote()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        upvote: { title: "Some post", id: expect.any(String), votes: 1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+            // it("does not upvote post again when already upvoted by same user", async () => {});
+        });
+        describe("DOWNVOTE_POST", () => {
+            const DOWNVOTE_POST = gql`
+                mutation($id: ID!, $voter: UserInput!) {
+                    downvote(id: $id, voter: $voter) {
+                        title
+                        id
+                        author {
+                            name
+                        }
+                        votes
+                    }
+                }
+            `;
+
+            it("upvotes post", async () => {
+                const downvote = () => {
+                    mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
+                };
+                await expect(downvote()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        upvote: { title: "Some post", id: expect.any(String), votes: -1, author: { name: "Jonas" } },
+                    },
+                });
             });
         });
     });

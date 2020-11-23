@@ -1,6 +1,4 @@
-import { assertValidExecutionArguments } from "graphql/execution/execute";
-
-const { ApolloServer, gql, UserInputError } = require("apollo-server");
+const { UserInputError } = require("apollo-server");
 
 const resolvers = {
     Query: {
@@ -17,9 +15,10 @@ const resolvers = {
             if (!author) {
                 throw new UserInputError("Invalid user", { invalidArgs: newPost.authorName });
             }
+            // console.log(context.dataSources.db.createPost(newPost));
             return await context.dataSources.db.createPost(newPost);
         },
-        async upvote(parent, args, context) {
+        upvote: async (parent, args, context) => {
             const upvoter = await context.dataSources.db.getUser(args.voter.name);
             if (!upvoter) {
                 throw new UserInputError("Invalid user", { invalidArgs: args.voter.name });
@@ -28,6 +27,7 @@ const resolvers = {
             if (!post) {
                 throw new UserInputError("Invalid post", { invalidArgs: args.id });
             }
+            // console.log(context.dataSources.db.upvotePost(args.id, args.voter.name));
             return await context.dataSources.db.upvotePost(args.id, args.voter.name);
         },
         async downvote(parent, args, context) {

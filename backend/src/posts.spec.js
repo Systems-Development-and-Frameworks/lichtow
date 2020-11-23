@@ -2,7 +2,6 @@ import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
 import { InMemoryDataSource, User, Post } from "./datasource";
-import { isTypeSystemDefinitionNode } from "graphql";
 
 let db;
 beforeEach(() => {
@@ -97,6 +96,7 @@ describe("mutations", () => {
             });
         });
     });
+
     describe("VOTE_POST", () => {
         let postId;
         beforeEach(() => {
@@ -116,12 +116,7 @@ describe("mutations", () => {
                     }
                 }
             `;
-            const upvote = () => {
-                mutate({
-                    mutation: UPVOTE_POST,
-                    variables: { id: postId, voter: { name: "Jonas" } },
-                });
-            };
+            const upvote = () => mutate({ mutation: UPVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
 
             it("calls db.upvotePost", async () => {
                 db.upvotePost = jest.fn(() => {});
@@ -130,21 +125,16 @@ describe("mutations", () => {
             });
 
             it("throws error when post id invalid", async () => {
-                const invalidId = () => {
+                const invalidId = () =>
                     mutate({ mutation: UPVOTE_POST, variables: { id: 123, voter: { name: "Jonas" } } });
-                };
                 const {
                     errors: [error],
                 } = await invalidId();
                 expect(error.message).toEqual("Invalid post");
             });
             it("throws error when user is invalid", async () => {
-                const invalidUser = () => {
-                    mutate({
-                        mutation: UPVOTE_POST,
-                        variables: { id: postId, voter: { name: "INVALID" } },
-                    });
-                };
+                const invalidUser = () =>
+                    mutate({ mutation: UPVOTE_POST, variables: { id: postId, voter: { name: "INVALID" } } });
                 const {
                     errors: [error],
                 } = await invalidUser();
@@ -182,15 +172,46 @@ describe("mutations", () => {
                     }
                 }
             `;
+            const downvote = () =>
+                mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
 
-            it("downvotes post", async () => {
-                const downvote = () => {
-                    mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
-                };
+            it("calls db.downvotePost", async () => {
+                db.downvotePost = jest.fn(() => {});
+                await downvote();
+                expect(db.downvotePost).toHaveBeenCalledWith(postId, "Jonas");
+            });
+
+            it("throws error when post id invalid", async () => {
+                const invalidId = () =>
+                    mutate({ mutation: DOWNVOTE_POST, variables: { id: 123, voter: { name: "Jonas" } } });
+                const {
+                    errors: [error],
+                } = await invalidId();
+                expect(error.message).toEqual("Invalid post");
+            });
+            it("throws error when user is invalid", async () => {
+                const invalidUser = () =>
+                    mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "INVALID" } } });
+                const {
+                    errors: [error],
+                } = await invalidUser();
+                expect(error.message).toEqual("Invalid user");
+            });
+
+            it("dowvotes post", async () => {
                 await expect(downvote()).resolves.toMatchObject({
                     errors: undefined,
                     data: {
-                        upvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
+                        downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+            it("does not downvote post again when already downvoted by same user", async () => {
+                await downvote();
+                await expect(downvote()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
                     },
                 });
             });

@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="item-title">{{ item.title }} ({{ item.votes }})</div>
-    <div class="item-buttons">
+    <div class="post-title">{{ post.title }} ({{ post.votes }})</div>
+    <div class="post-buttons">
       <button @click="upvote">Upvote</button>
       <button @click="downvote">Downvote</button>
       <button @click="remove">Remove</button>
@@ -11,31 +11,27 @@
 
 <script>
 export default {
-  props: ["item"],
+  props: ["post"],
   methods: {
     upvote: function () {
-      let item = {...this.item};
-      item.votes++;
-      this.$emit("updateItem", item);
+      this.$emit("upvote");
     },
     downvote: function () {
-       let item = {...this.item};
-      item.votes--;
-      this.$emit("updateItem", item);
+      this.$emit("downvote");
     },
     remove: function () {
-      this.$emit("removeItem", this.item);
+      this.$emit("remove", this.post);
     },
   },
 };
 </script>
 
 <style>
-.item-title {
+.post-title {
   font-size: 24px;
   text-align: center;
 }
-.item-buttons {
+.post-buttons {
   padding: 15px 0;
 }
 </style>

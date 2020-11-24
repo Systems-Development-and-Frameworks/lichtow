@@ -5,15 +5,16 @@ export default {
     component: NewsItem,
     argTypes: {
         item: {},
-        removeItem: { action: "removeItem" },
-        updateItem: { action: "updateItem" },
+        remove: { action: "remove" },
+        upvote: { action: "upvote" },
+        downvote: { action: "downvote" },
     },
 };
 
 const Template = (args, { argTypes }) => ({
     props: Object.keys(argTypes),
     components: { NewsItem },
-    template: "<NewsItem @removeItem='removeItem(item)' @updateItem='updateItem(item)' v-bind='$props' />",
+    template: "<NewsItem @remove='remove' @upvote='upvote' @downvote='downvote' v-bind='$props' />",
 });
 
 export const TestItem = Template.bind({});

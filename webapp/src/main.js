@@ -1,6 +1,8 @@
 import NewsList from "./components/NewsList/NewsList.vue";
 import Vue from "vue";
+import { createProvider } from "./vue-apollo";
 
 new Vue({
-  render: (h) => h(NewsList)
+    apolloProvider: createProvider(),
+    render: (h) => h(NewsList),
 }).$mount("#app");

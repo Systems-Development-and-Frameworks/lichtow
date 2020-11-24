@@ -1,4 +1,4 @@
-import { createLocalVue, mount, shallowMount } from "@vue/test-utils";
+import { createLocalVue, mount } from "@vue/test-utils";
 import VueApollo from "vue-apollo";
 import { createMockClient } from "mock-apollo-client";
 import NewsList from "./NewsList.vue";

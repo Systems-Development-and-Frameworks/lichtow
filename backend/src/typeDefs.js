@@ -9,7 +9,9 @@ const typeDefs = gql`
     }
 
     type User {
-        name: ID!
+        id: ID!
+        name: String!
+        email: String!
         posts: [Post]
     }
 
@@ -19,28 +21,18 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        write(post: PostInput!): Post
-        # 🚀 OPTIONAL
-        delete(id: ID!): Post
+        # write(post: PostInput!): Post
+        # delete(id: ID!): Post
+        # upvote(id: ID!, voter: UserInput!): Post
+        # downvote(id: ID!, voter: UserInput!): Post
 
-        # ⚠️ FIXME in exercise #4
-        # mock voter until we have authentication
-        upvote(id: ID!, voter: UserInput!): Post
-
-        # 🚀 OPTIONAL
-        downvote(id: ID!, voter: UserInput!): Post
+        #return JWT
+        login(email: String!, password: String!): String
+        signup(name: String!, email: String!, password: String!): String
     }
 
     input PostInput {
         title: String!
-
-        # ⚠️ FIXME in exercise #4
-        # mock author until we have authentication
-        author: UserInput!
-    }
-
-    input UserInput {
-        name: String!
     }
 `;
 

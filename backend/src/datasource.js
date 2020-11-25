@@ -9,8 +9,11 @@ export class Post {
     }
 }
 export class User {
-    constructor(name) {
+    constructor(name, email, password) {
+        this.id = crypto.randomBytes(16).toString("hex");
         this.name = name;
+        this.email = email;
+        this.password = password;
     }
 }
 
@@ -25,6 +28,12 @@ export class InMemoryDataSource extends DataSource {
 
     allUsers() {
         return Promise.resolve(this.users);
+    }
+
+    createUser(name, email, password) {
+        const newUser = new User(name, email, password);
+        this.users.push(newUser);
+        return Promise.resolve(newUser);
     }
 
     getUser(name) {

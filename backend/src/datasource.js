@@ -40,6 +40,10 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(this.users.find((user) => user.name === name));
     }
 
+    getUserByEmail(email) {
+        return Promise.resolve(this.users.find((user) => user.email === email));
+    }
+
     allPosts() {
         return Promise.resolve(this.posts);
     }

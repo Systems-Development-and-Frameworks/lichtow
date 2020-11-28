@@ -1,5 +1,6 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 const saltRounds = 10;
 
 const resolvers = {
@@ -8,20 +9,34 @@ const resolvers = {
         posts: (parent, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
-        signup: async (_, args, context) => {
+        signup: async (_, args, { dataSources }) => {
             const name = args.name;
             const email = args.email;
             const password = args.password;
             if (password.length < 9) {
                 throw new UserInputError("Password is too short", { invalidArgs: password });
             }
-            const users = await context.dataSources.db.allUsers();
+            const users = await dataSources.db.allUsers();
             if (users.find((user) => user.email === email)) {
                 throw new UserInputError("User with this email already exists", { invalidArgs: email });
             }
             const hashedPassword = await bcrypt.hash(password, saltRounds);
-            const newUser = await context.dataSources.db.createUser(name, email, hashedPassword);
+            const newUser = await dataSources.db.createUser(name, email, hashedPassword);
             return newUser.id;
+        },
+        login: async (_, args, { dataSources }) => {
+            const email = args.email;
+            const password = args.password;
+            const user = await dataSources.db.getUserByEmail(email);
+            if (!user) {
+                throw new UserInputError("No user with this email", { invalidArgs: email });
+            }
+            const isCorrectPassword = await bcrypt.compare(password, user.password);
+            if (!isCorrectPassword) {
+                throw new UserInputError("Password is incorrect");
+            }
+            let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+            return token;
         },
         // write: async (parent, args, context) => {
         //     const newPost = {

@@ -15,8 +15,10 @@
     "apollo-datasource": "^0.7.2",
     "apollo-server": "^2.19.0",
     "bcrypt": "^5.0.0",
+    "dotenv": "^8.2.0",
     "esm": "^3.2.25",
-    "graphql": "^15.4.0"
+    "graphql": "^15.4.0",
+    "jsonwebtoken": "^8.5.1"
   },
   "eslintConfig": {
     "env": {

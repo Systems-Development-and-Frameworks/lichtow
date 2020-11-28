@@ -40,8 +40,7 @@ describe("mutations", () => {
         it("calls db.createUser", async () => {
             db.createUser = jest.fn(() => {});
             await signupAction();
-            //TODO: use .toHaveBeenCalledWith -> Password hashing in User Class
-            expect(db.createUser).toHaveBeenCalled();
+            expect(db.createUser).toHaveBeenCalledWith("Jonas", "jonas@jonas.com", "Jonas1234");
         });
         it("responds with user id", async () => {
             const { errors, data } = await signupAction();
@@ -58,5 +57,39 @@ describe("mutations", () => {
             expect(error.message).toEqual("User with this email already exists");
             expect(data).toMatchObject({ signup: null });
         });
+    });
+    describe("LOGIN", () => {
+        const LOGIN = gql`
+            mutation($email: String!, $password: String!) {
+                login(email: $email, password: $password)
+            }
+        `;
+        const loginAction = () =>
+            mutate({ mutation: LOGIN, variables: { email: "jonas@jonas.com", password: "Jonas1234" } });
+        const wrongEmailAction = () =>
+            mutate({ mutation: LOGIN, variables: { email: "wrong email", password: "Jonas1234" } });
+        const wrongPasswordAction = () =>
+            mutate({ mutation: LOGIN, variables: { email: "jonas@jonas.com", password: "wrongPassword" } });
+
+        beforeEach(async () => {
+            await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+        });
+        it("throws error if there is no user with this email", async () => {
+            const {
+                errors: [error],
+                data,
+            } = await wrongEmailAction();
+            expect(error.message).toEqual("No user with this email");
+            expect(data).toMatchObject({ login: null });
+        });
+        it("throws error if the password is incorrect", async () => {
+            const {
+                errors: [error],
+                data,
+            } = await wrongPasswordAction();
+            expect(error.message).toEqual("Password is incorrect");
+            expect(data).toMatchObject({ login: null });
+        });
+        //TODO: Test successful login
     });
 });

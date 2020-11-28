@@ -1,5 +1,8 @@
 import { DataSource } from "apollo-datasource";
+import bcrypt, { hash } from "bcrypt";
 import crypto from "crypto";
+
+const saltRounds = 10;
 
 export class Post {
     constructor(data) {
@@ -14,6 +17,10 @@ export class User {
         this.name = name;
         this.email = email;
         this.password = password;
+    }
+    static async build(name, email, password) {
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        return new User(name, email, hashedPassword);
     }
 }
 
@@ -30,8 +37,8 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(this.users);
     }
 
-    createUser(name, email, password) {
-        const newUser = new User(name, email, password);
+    async createUser(name, email, password) {
+        const newUser = await User.build(name, email, password);
         this.users.push(newUser);
         return Promise.resolve(newUser);
     }

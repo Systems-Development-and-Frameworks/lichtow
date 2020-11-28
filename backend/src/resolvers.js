@@ -1,7 +1,6 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-const saltRounds = 10;
 
 const resolvers = {
     Query: {
@@ -20,8 +19,7 @@ const resolvers = {
             if (users.find((user) => user.email === email)) {
                 throw new UserInputError("User with this email already exists", { invalidArgs: email });
             }
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
-            const newUser = await dataSources.db.createUser(name, email, hashedPassword);
+            const newUser = await dataSources.db.createUser(name, email, password);
             return newUser.id;
         },
         login: async (_, args, { dataSources }) => {

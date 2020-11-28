@@ -6,112 +6,57 @@ import { InMemoryDataSource, User, Post } from "./datasource";
 let db;
 beforeEach(() => {
     db = new InMemoryDataSource();
-    db.users.push(new User("Jonas"), new User("Paula"));
 });
 
 const server = new Server({ dataSources: () => ({ db }) });
 
 const { query, mutate } = createTestClient(server);
 
-describe("queries", () => {
-    describe("USERS", () => {
-        const USERS = gql`
-            query {
-                users {
-                    name
-                }
+describe("mutations", () => {
+    describe("SIGNUP", () => {
+        const SIGNUP = gql`
+            mutation($name: String!, $email: String!, $password: String!) {
+                signup(name: $name, email: $email, password: $password)
             }
         `;
-
-        it("given users in the database", async () => {
-            await expect(query({ query: USERS })).resolves.toMatchObject({
-                errors: undefined,
-                data: { users: [{ name: "Jonas" }, { name: "Paula" }] },
-            });
+        const signupAction = () =>
+            mutate({ mutation: SIGNUP, variables: { name: "Jonas", email: "jonas@jonas.com", password: "Jonas1234" } });
+        const signupShortPasswordAction = () =>
+            mutate({ mutation: SIGNUP, variables: { name: "Jonas", email: "jonas@jonas.com", password: "short" } });
+        it("throws an error when password is too short", async () => {
+            const {
+                errors: [error],
+                data,
+            } = await signupShortPasswordAction();
+            expect(error.message).toEqual("Password is too short");
+            expect(data).toMatchObject({ signup: null });
         });
-    });
 
-    describe("USERS", () => {
-        const USERS = gql`
-            query {
-                users {
-                    name
-                    posts {
-                        title
-                    }
-                }
-            }
-        `;
-
-        it("returns all users with no posts", async () => {
-            await expect(query({ query: USERS })).resolves.toMatchObject({
-                errors: undefined,
-                data: {
-                    users: [
-                        { name: "Jonas", posts: [] },
-                        { name: "Paula", posts: [] },
-                    ],
-                },
-            });
+        it("adds a user to db.users", async () => {
+            expect(db.users).toHaveLength(0);
+            await signupAction();
+            expect(db.users).toHaveLength(1);
         });
-        describe("WRITE_POST", () => {
-            const action = () =>
-                mutate({
-                    mutation: WRITE_POST,
-                    variables: { post: { title: "Some post", author: { name: "Jonas" } } },
-                });
-            const WRITE_POST = gql`
-                mutation($post: PostInput!) {
-                    write(post: $post) {
-                        author {
-                            name
-                            posts {
-                                title
-                            }
-                        }
-                    }
-                }
-            `;
-            it("adds post to user", async () => {
-                await expect(action()).resolves.toMatchObject({
-                    errors: undefined,
-                    data: {
-                        write: { author: { name: "Jonas", posts: [{ title: "Some post" }] } },
-                    },
-                });
-            });
+        it("calls db.createUser", async () => {
+            db.createUser = jest.fn(() => {});
+            await signupAction();
+            //TODO: use .toHaveBeenCalledWith -> Password hashing in User Class
+            expect(db.createUser).toHaveBeenCalled();
         });
-        describe("DELETE_POST", () => {
-            let postId;
-            beforeEach(() => {
-                db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
-                postId = db.posts[0].id;
-            });
-            const deletePost = () =>
-                mutate({
-                    mutation: DELETE_POST,
-                    variables: { id: postId },
-                });
-            const DELETE_POST = gql`
-                mutation($id: ID!) {
-                    delete(id: $id) {
-                        author {
-                            name
-                            posts {
-                                title
-                            }
-                        }
-                    }
-                }
-            `;
-            it("removes post from user", async () => {
-                await expect(deletePost()).resolves.toMatchObject({
-                    errors: undefined,
-                    data: {
-                        delete: { author: { name: "Jonas", posts: [] } },
-                    },
-                });
-            });
+        it("responds with user id", async () => {
+            const { errors, data } = await signupAction();
+            const userId = db.users[0].id;
+            expect(data).toMatchObject({ signup: userId });
+            expect(errors).toBe(undefined);
+        });
+        it("throws error if user with email already exists", async () => {
+            await signupAction();
+            const {
+                errors: [error],
+                data,
+            } = await signupAction();
+            expect(error.message).toEqual("User with this email already exists");
+            expect(data).toMatchObject({ signup: null });
         });
     });
 });

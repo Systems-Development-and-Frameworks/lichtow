@@ -3,19 +3,17 @@ import { rule, shield } from "graphql-shield";
 const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, ctx, info) => {
     return ctx.userId !== null;
 });
+const allow = rule({ cache: "contextual" })(async (parent, args, ctx, info) => true);
 
 export const permissions = shield(
     {
-        Query: {
-            users: isAuthenticated,
-            posts: isAuthenticated,
-        },
         Mutation: {
-            write: isAuthenticated,
-            upvote: isAuthenticated,
+            signup: allow,
+            login: allow,
         },
     },
     {
         allowExternalErrors: true,
+        fallbackRule: isAuthenticated,
     }
 );

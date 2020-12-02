@@ -43,6 +43,7 @@ describe("queries", () => {
             } = await postQuery();
             expect(error.message).toEqual("Not Authorised!");
         });
+
         it("returns empty array", async () => {
             await expect(postQuery()).resolves.toMatchObject({
                 errors: undefined,
@@ -181,12 +182,76 @@ describe("mutations", () => {
                     },
                 });
             });
+
             it("does not upvote post again when already upvoted by same user", async () => {
                 await upvoteAction(postId);
                 await expect(upvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+        });
+        describe("DOWNVOTE_POST", () => {
+            const DOWNVOTE_POST = gql`
+                mutation($id: ID!) {
+                    downvote(id: $id) {
+                        title
+                        id
+                        author {
+                            name
+                        }
+                        votes
+                    }
+                }
+            `;
+            const downvoteAction = (id) => mutate({ mutation: DOWNVOTE_POST, variables: { id: id } });
+
+            it("calls db.downvotePost", async () => {
+                db.downvotePost = jest.fn(() => {});
+                await downvoteAction(postId);
+                expect(db.downvotePost).toHaveBeenCalledWith(postId, userId);
+            });
+
+            it("throws error when post id is invalid", async () => {
+                const {
+                    errors: [error],
+                } = await downvoteAction("INVALID");
+                expect(error.message).toEqual("Invalid post");
+            });
+
+            it("throws error when user is invalid", async () => {
+                userId = "INVALID";
+                const {
+                    errors: [error],
+                } = await downvoteAction(postId);
+                expect(error.message).toEqual("Invalid user");
+            });
+
+            it("throws error when user is not authorised", async () => {
+                userId = null;
+                const {
+                    errors: [error],
+                } = await downvoteAction(postId);
+                expect(error.message).toEqual("Not Authorised!");
+            });
+
+            it("dowvotes post", async () => {
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+
+            it("does not downvote post again when already downvoted by same user", async () => {
+                await downvoteAction(postId);
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
                     },
                 });
             });

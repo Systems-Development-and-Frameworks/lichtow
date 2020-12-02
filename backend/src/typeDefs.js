@@ -24,9 +24,8 @@ const typeDefs = gql`
         write(post: PostInput!): Post
         # delete(id: ID!): Post
         upvote(id: ID!): Post
-        # downvote(id: ID!): Post
+        downvote(id: ID!): Post
 
-        #return JWT
         login(email: String!, password: String!): String
         signup(name: String!, email: String!, password: String!): String
     }

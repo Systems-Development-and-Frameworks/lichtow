@@ -5,10 +5,11 @@ import crypto from "crypto";
 const saltRounds = 10;
 
 export class Post {
-    constructor(data) {
+    constructor(title, authorId) {
         this.id = crypto.randomBytes(16).toString("hex");
         this.voters = new Map();
-        Object.assign(this, data);
+        this.title = title;
+        this.authorId = authorId;
     }
 }
 export class User {
@@ -43,8 +44,8 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(newUser);
     }
 
-    getUser(name) {
-        return Promise.resolve(this.users.find((user) => user.name === name));
+    getUser(userId) {
+        return Promise.resolve(this.users.find((user) => user.id === userId));
     }
 
     getUserByEmail(email) {
@@ -59,8 +60,8 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(this.posts.find((post) => post.id === id));
     }
 
-    createPost(data) {
-        const newPost = new Post(data);
+    createPost(title, authorId) {
+        const newPost = new Post(title, authorId);
         this.posts.push(newPost);
         return Promise.resolve(newPost);
     }

@@ -35,17 +35,15 @@ const resolvers = {
             let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
             return token;
         },
-        // write: async (parent, args, context) => {
-        //     const newPost = {
-        //         title: args.post.title,
-        //         authorName: args.post.author.name,
-        //     };
-        //     const author = await context.dataSources.db.getUser(newPost.authorName);
-        //     if (!author) {
-        //         throw new UserInputError("Invalid user", { invalidArgs: newPost.authorName });
-        //     }
-        //     return await context.dataSources.db.createPost(newPost);
-        // },
+        write: async (_, args, { dataSources, userId }) => {
+            const title = args.post.title;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            }
+            return await dataSources.db.createPost(title, userId);
+        },
+
         // delete: async (parent, args, context) => {
         //     const id = args.id;
         //     const post = await context.dataSources.db.getPost(id);
@@ -83,7 +81,7 @@ const resolvers = {
     },
     Post: {
         author: async (obj, args, context) => {
-            return await context.dataSources.db.getUser(obj.authorName);
+            return await context.dataSources.db.getUser(obj.authorId);
         },
         votes: async (obj, args, context) => {
             let values = Array.from(obj.voters.values());
@@ -94,7 +92,7 @@ const resolvers = {
     User: {
         posts: async (obj, args, context) => {
             const allPosts = await context.dataSources.db.allPosts();
-            return allPosts.filter((post) => post.authorName === obj.name);
+            return allPosts.filter((post) => post.authorId === obj.name);
         },
     },
 };

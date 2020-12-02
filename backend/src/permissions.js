@@ -12,6 +12,7 @@ export const permissions = shield(
         },
         Mutation: {
             write: isAuthenticated,
+            upvote: isAuthenticated,
         },
     },
     {

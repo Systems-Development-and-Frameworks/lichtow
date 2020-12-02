@@ -43,6 +43,18 @@ const resolvers = {
             }
             return await dataSources.db.createPost(title, userId);
         },
+        upvote: async (_, args, { dataSources, userId }) => {
+            const postId = args.id;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            }
+            const post = await dataSources.db.getPost(postId);
+            if (!post) {
+                throw new UserInputError("Invalid post", { invalidArgs: postId });
+            }
+            return await dataSources.db.upvotePost(postId, userId);
+        },
 
         // delete: async (parent, args, context) => {
         //     const id = args.id;
@@ -52,19 +64,7 @@ const resolvers = {
         //     }
         //     return await context.dataSources.db.deletePost(id);
         // },
-        // upvote: async (parent, args, context) => {
-        //     const name = args.voter.name;
-        //     const id = args.id;
-        //     const upvoter = await context.dataSources.db.getUser(name);
-        //     if (!upvoter) {
-        //         throw new UserInputError("Invalid user", { invalidArgs: name });
-        //     }
-        //     const post = await context.dataSources.db.getPost(id);
-        //     if (!post) {
-        //         throw new UserInputError("Invalid post", { invalidArgs: id });
-        //     }
-        //     return await context.dataSources.db.upvotePost(id, name);
-        // },
+
         // downvote: async (parent, args, context) => {
         //     const name = args.voter.name;
         //     const id = args.id;

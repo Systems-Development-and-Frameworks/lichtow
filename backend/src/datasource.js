@@ -72,9 +72,9 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(deletedPost);
     }
 
-    upvotePost(id, user) {
+    upvotePost(id, userId) {
         return this.getPost(id).then((post) => {
-            post.voters.set(user, 1);
+            post.voters.set(userId, 1);
             return post;
         });
     }

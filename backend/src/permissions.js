@@ -4,9 +4,14 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, ctx, 
     return ctx.user !== null;
 });
 
-export const permissions = shield({
-    Query: {
-        users: isAuthenticated,
-        posts: isAuthenticated,
+export const permissions = shield(
+    {
+        Query: {
+            users: isAuthenticated,
+            posts: isAuthenticated,
+        },
     },
-});
+    {
+        allowExternalErrors: true,
+    }
+);

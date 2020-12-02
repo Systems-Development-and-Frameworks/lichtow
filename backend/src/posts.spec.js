@@ -44,6 +44,14 @@ describe("mutations", () => {
             expect(error.message).toEqual("Invalid user");
         });
 
+        it("throws error when user is not authorised", async () => {
+            userId = null;
+            const {
+                errors: [error],
+            } = await writePostAction("Some post");
+            expect(error.message).toEqual("Not Authorised!");
+        });
+
         it("adds a post to db.posts", async () => {
             expect(db.posts).toHaveLength(0);
             await writePostAction("Some post");
@@ -97,18 +105,27 @@ describe("mutations", () => {
                 expect(db.upvotePost).toHaveBeenCalledWith(postId, userId);
             });
 
-            it("throws error when post id invalid", async () => {
+            it("throws error when post id is invalid", async () => {
                 const {
                     errors: [error],
-                } = await upvoteAction(123);
+                } = await upvoteAction("INVALID");
                 expect(error.message).toEqual("Invalid post");
             });
+
             it("throws error when user is invalid", async () => {
                 userId = "INVALID";
                 const {
                     errors: [error],
                 } = await upvoteAction(postId);
                 expect(error.message).toEqual("Invalid user");
+            });
+
+            it("throws error when user is not authorised", async () => {
+                userId = null;
+                const {
+                    errors: [error],
+                } = await upvoteAction(postId);
+                expect(error.message).toEqual("Not Authorised!");
             });
 
             it("upvotes post", async () => {

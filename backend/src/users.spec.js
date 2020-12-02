@@ -32,14 +32,25 @@ describe("queries", () => {
                 }
             }
         `;
+
+        const userQuery = () => query({ query: USERS });
+
         beforeEach(async () => {
             await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
             await db.createUser("Paula", "paula@paula.com", "Paula1234");
             userId = db.users[0].id;
         });
 
+        it("throws error when user is not authorised", async () => {
+            userId = null;
+            const {
+                errors: [error],
+            } = await userQuery();
+            expect(error.message).toEqual("Not Authorised!");
+        });
+
         it("returns all users with no posts", async () => {
-            await expect(query({ query: USERS })).resolves.toMatchObject({
+            await expect(userQuery()).resolves.toMatchObject({
                 errors: undefined,
                 data: {
                     users: [

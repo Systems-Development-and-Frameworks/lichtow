@@ -1,6 +1,5 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 
 const resolvers = {
     Query: {
@@ -22,7 +21,7 @@ const resolvers = {
             const newUser = await dataSources.db.createUser(name, email, password);
             return newUser.id;
         },
-        login: async (_, args, { dataSources }) => {
+        login: async (_, args, { dataSources, jwt }) => {
             const email = args.email;
             const password = args.password;
             const user = await dataSources.db.getUserByEmail(email);

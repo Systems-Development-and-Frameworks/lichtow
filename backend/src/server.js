@@ -17,9 +17,9 @@ const context = ({ req }) => {
         const { authorization } = req.headers;
         const token = authorization.replace("Bearer ", "");
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        return { user: payload };
+        return { user: payload, jwt };
     } catch (e) {
-        return { user: null };
+        return { user: null, jwt };
     }
 };
 const schema = makeExecutableSchema({ typeDefs, resolvers });

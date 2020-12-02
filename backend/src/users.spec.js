@@ -4,11 +4,17 @@ import Server from "./server";
 import { InMemoryDataSource, User, Post } from "./datasource";
 
 let db;
+let jwt;
 beforeEach(() => {
     db = new InMemoryDataSource();
+    jwt = null;
 });
 
-const server = new Server({ dataSources: () => ({ db }) });
+const context = () => {
+    return { jwt };
+};
+
+const server = new Server({ dataSources: () => ({ db }), context });
 
 const { query, mutate } = createTestClient(server);
 
@@ -19,41 +25,40 @@ describe("mutations", () => {
                 signup(name: $name, email: $email, password: $password)
             }
         `;
-        const signupAction = () =>
-            mutate({ mutation: SIGNUP, variables: { name: "Jonas", email: "jonas@jonas.com", password: "Jonas1234" } });
-        const signupShortPasswordAction = () =>
-            mutate({ mutation: SIGNUP, variables: { name: "Jonas", email: "jonas@jonas.com", password: "short" } });
+        const signupAction = (name, email, password) =>
+            mutate({ mutation: SIGNUP, variables: { name: name, email: email, password: password } });
+
         it("throws an error when password is too short", async () => {
             const {
                 errors: [error],
                 data,
-            } = await signupShortPasswordAction();
+            } = await signupAction("Jonas", "jonas@jonas.com", "short");
             expect(error.message).toEqual("Password is too short");
             expect(data).toMatchObject({ signup: null });
         });
 
         it("adds a user to db.users", async () => {
             expect(db.users).toHaveLength(0);
-            await signupAction();
+            await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             expect(db.users).toHaveLength(1);
         });
         it("calls db.createUser", async () => {
             db.createUser = jest.fn(() => {});
-            await signupAction();
+            await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             expect(db.createUser).toHaveBeenCalledWith("Jonas", "jonas@jonas.com", "Jonas1234");
         });
         it("responds with user id", async () => {
-            const { errors, data } = await signupAction();
+            const { errors, data } = await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             const userId = db.users[0].id;
             expect(data).toMatchObject({ signup: userId });
             expect(errors).toBe(undefined);
         });
         it("throws error if user with email already exists", async () => {
-            await signupAction();
+            await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             const {
                 errors: [error],
                 data,
-            } = await signupAction();
+            } = await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             expect(error.message).toEqual("User with this email already exists");
             expect(data).toMatchObject({ signup: null });
         });
@@ -64,21 +69,19 @@ describe("mutations", () => {
                 login(email: $email, password: $password)
             }
         `;
-        const loginAction = () =>
-            mutate({ mutation: LOGIN, variables: { email: "jonas@jonas.com", password: "Jonas1234" } });
-        const wrongEmailAction = () =>
-            mutate({ mutation: LOGIN, variables: { email: "wrong email", password: "Jonas1234" } });
-        const wrongPasswordAction = () =>
-            mutate({ mutation: LOGIN, variables: { email: "jonas@jonas.com", password: "wrongPassword" } });
+
+        const loginAction = (email, password) =>
+            mutate({ mutation: LOGIN, variables: { email: email, password: password } });
 
         beforeEach(async () => {
             await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
         });
+
         it("throws error if there is no user with this email", async () => {
             const {
                 errors: [error],
                 data,
-            } = await wrongEmailAction();
+            } = await loginAction("wrong email", "Jonas1234");
             expect(error.message).toEqual("No user with this email");
             expect(data).toMatchObject({ login: null });
         });
@@ -86,10 +89,16 @@ describe("mutations", () => {
             const {
                 errors: [error],
                 data,
-            } = await wrongPasswordAction();
+            } = await loginAction("jonas@jonas.com", "wrongPassword");
             expect(error.message).toEqual("Password is incorrect");
             expect(data).toMatchObject({ login: null });
         });
-        //TODO: Test successful login
+
+        it("logs user in successfully", async () => {
+            jwt = { sign: () => "successToken" };
+            const { errors, data } = await loginAction("jonas@jonas.com", "Jonas1234");
+            expect(errors).toBe(undefined);
+            expect(data).toMatchObject({ login: "successToken" });
+        });
     });
 });

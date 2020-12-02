@@ -68,14 +68,21 @@ const resolvers = {
             return await dataSources.db.downvotePost(postId, userId);
         },
 
-        // delete: async (parent, args, context) => {
-        //     const id = args.id;
-        //     const post = await context.dataSources.db.getPost(id);
-        //     if (!post) {
-        //         throw new UserInputError("Invalid post", { invalidArgs: id });
-        //     }
-        //     return await context.dataSources.db.deletePost(id);
-        // },
+        delete: async (_, args, { dataSources, userId }) => {
+            const postId = args.id;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            }
+            const post = await dataSources.db.getPost(postId);
+            if (!post) {
+                throw new UserInputError("Invalid post", { invalidArgs: postId });
+            }
+            if (post.authorId !== userId) {
+                throw new UserInputError("Only authors are allowed to delete posts");
+            }
+            return await dataSources.db.deletePost(postId);
+        },
     },
     Post: {
         author: async (obj, args, context) => {

@@ -22,7 +22,7 @@ const typeDefs = gql`
 
     type Mutation {
         write(post: PostInput!): Post
-        # delete(id: ID!): Post
+        delete(id: ID!): Post
         upvote(id: ID!): Post
         downvote(id: ID!): Post
 

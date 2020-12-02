@@ -86,16 +86,20 @@ describe("mutations", () => {
             userId = "INVALID";
             const {
                 errors: [error],
+                data,
             } = await writePostAction("Some post");
             expect(error.message).toEqual("Invalid user");
+            expect(data).toMatchObject({ write: null });
         });
 
         it("throws error when user is not authorised", async () => {
             userId = null;
             const {
                 errors: [error],
+                data,
             } = await writePostAction("Some post");
             expect(error.message).toEqual("Not Authorised!");
+            expect(data).toMatchObject({ write: null });
         });
 
         it("adds a post to db.posts", async () => {
@@ -154,24 +158,30 @@ describe("mutations", () => {
             it("throws error when post id is invalid", async () => {
                 const {
                     errors: [error],
+                    data,
                 } = await upvoteAction("INVALID");
                 expect(error.message).toEqual("Invalid post");
+                expect(data).toMatchObject({ upvote: null });
             });
 
             it("throws error when user is invalid", async () => {
                 userId = "INVALID";
                 const {
                     errors: [error],
+                    data,
                 } = await upvoteAction(postId);
                 expect(error.message).toEqual("Invalid user");
+                expect(data).toMatchObject({ upvote: null });
             });
 
             it("throws error when user is not authorised", async () => {
                 userId = null;
                 const {
                     errors: [error],
+                    data,
                 } = await upvoteAction(postId);
                 expect(error.message).toEqual("Not Authorised!");
+                expect(data).toMatchObject({ upvote: null });
             });
 
             it("upvotes post", async () => {
@@ -217,24 +227,30 @@ describe("mutations", () => {
             it("throws error when post id is invalid", async () => {
                 const {
                     errors: [error],
+                    data,
                 } = await downvoteAction("INVALID");
                 expect(error.message).toEqual("Invalid post");
+                expect(data).toMatchObject({ downvote: null });
             });
 
             it("throws error when user is invalid", async () => {
                 userId = "INVALID";
                 const {
                     errors: [error],
+                    data,
                 } = await downvoteAction(postId);
                 expect(error.message).toEqual("Invalid user");
+                expect(data).toMatchObject({ downvote: null });
             });
 
             it("throws error when user is not authorised", async () => {
                 userId = null;
                 const {
                     errors: [error],
+                    data,
                 } = await downvoteAction(postId);
                 expect(error.message).toEqual("Not Authorised!");
+                expect(data).toMatchObject({ downvote: null });
             });
 
             it("dowvotes post", async () => {
@@ -254,6 +270,75 @@ describe("mutations", () => {
                         downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
                     },
                 });
+            });
+        });
+    });
+    describe("DELETE_POST", () => {
+        let postId;
+        let otherUserId;
+        beforeEach(async () => {
+            await db.createUser("Paula", "paula@paula.com", "Paula1234");
+            otherUserId = db.users[1].id;
+            db.posts = [new Post("Some post", userId), new Post("Some other post", otherUserId)];
+            postId = db.posts[0].id;
+        });
+        const DELETE_POST = gql`
+            mutation($id: ID!) {
+                delete(id: $id) {
+                    title
+                    id
+                    author {
+                        name
+                    }
+                    votes
+                }
+            }
+        `;
+        const deletePostAction = (id) => mutate({ mutation: DELETE_POST, variables: { id: id } });
+
+        it("calls db.deletePost", async () => {
+            db.deletePost = jest.fn(() => {});
+            await deletePostAction(postId);
+            expect(db.deletePost).toHaveBeenCalledWith(postId);
+        });
+
+        it("throws error when post id invalid", async () => {
+            const {
+                errors: [error],
+                data,
+            } = await deletePostAction("INVALID");
+            expect(error.message).toEqual("Invalid post");
+            expect(data).toMatchObject({ delete: null });
+        });
+
+        it("throws error if user is not the author of the post", async () => {
+            const {
+                errors: [error],
+                data,
+            } = await deletePostAction(db.posts[1].id);
+            expect(error.message).toEqual("Only authors are allowed to delete posts");
+            expect(data).toMatchObject({ delete: null });
+        });
+
+        it("removes a post from db.posts", async () => {
+            expect(db.posts).toHaveLength(2);
+            await deletePostAction(postId);
+            expect(db.posts).toHaveLength(1);
+        });
+
+        it("does not remove same post twice from db.posts", async () => {
+            expect(db.posts).toHaveLength(2);
+            await deletePostAction(postId);
+            await deletePostAction(postId);
+            expect(db.posts).toHaveLength(1);
+        });
+
+        it("returns post that is deleted", async () => {
+            await expect(deletePostAction(postId)).resolves.toMatchObject({
+                errors: undefined,
+                data: {
+                    delete: { title: "Some post", id: postId, votes: 0, author: { name: "Jonas" } },
+                },
             });
         });
     });

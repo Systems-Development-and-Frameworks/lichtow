@@ -19,6 +19,51 @@ const server = new Server({ dataSources: () => ({ db }), context });
 
 const { query, mutate } = createTestClient(server);
 
+describe("queries", () => {
+    describe("POSTS", () => {
+        const POSTS = gql`
+            query {
+                posts {
+                    id
+                    title
+                    votes
+                    author {
+                        name
+                    }
+                }
+            }
+        `;
+
+        let postQuery = () => query({ query: POSTS });
+
+        it("throws error when user is not authorised", async () => {
+            userId = null;
+            const {
+                errors: [error],
+            } = await postQuery();
+            expect(error.message).toEqual("Not Authorised!");
+        });
+        it("returns empty array", async () => {
+            await expect(postQuery()).resolves.toMatchObject({
+                errors: undefined,
+                data: { posts: [] },
+            });
+        });
+
+        describe("given posts in the database", () => {
+            it("returns posts", async () => {
+                db.posts = [new Post("Some post", userId)];
+                await expect(postQuery()).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        posts: [{ id: expect.any(String), title: "Some post", votes: 0, author: { name: "Jonas" } }],
+                    },
+                });
+            });
+        });
+    });
+});
+
 describe("mutations", () => {
     describe("WRITE_POST", () => {
         const WRITE_POST = gql`

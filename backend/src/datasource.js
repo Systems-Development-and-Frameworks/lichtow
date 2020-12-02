@@ -56,8 +56,8 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(this.posts);
     }
 
-    getPost(id) {
-        return Promise.resolve(this.posts.find((post) => post.id === id));
+    getPost(postId) {
+        return Promise.resolve(this.posts.find((post) => post.id === postId));
     }
 
     createPost(title, authorId) {
@@ -66,22 +66,22 @@ export class InMemoryDataSource extends DataSource {
         return Promise.resolve(newPost);
     }
 
-    deletePost(id) {
-        const deletedPost = this.getPost(id);
-        this.posts = this.posts.filter((post) => post.id !== id);
+    deletePost(postId) {
+        const deletedPost = this.getPost(postId);
+        this.posts = this.posts.filter((post) => post.id !== postId);
         return Promise.resolve(deletedPost);
     }
 
-    upvotePost(id, userId) {
-        return this.getPost(id).then((post) => {
+    upvotePost(postId, userId) {
+        return this.getPost(postId).then((post) => {
             post.voters.set(userId, 1);
             return post;
         });
     }
 
-    downvotePost(id, user) {
-        return this.getPost(id).then((post) => {
-            post.voters.set(user, -1);
+    downvotePost(postId, userId) {
+        return this.getPost(postId).then((post) => {
+            post.voters.set(userId, -1);
             return post;
         });
     }

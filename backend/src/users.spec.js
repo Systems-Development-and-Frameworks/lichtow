@@ -5,18 +5,80 @@ import { InMemoryDataSource, User, Post } from "./datasource";
 
 let db;
 let jwt;
+let userId;
 beforeEach(() => {
     db = new InMemoryDataSource();
+    userId = null;
     jwt = null;
 });
 
 const context = () => {
-    return { jwt };
+    return { userId, jwt };
 };
 
 const server = new Server({ dataSources: () => ({ db }), context });
 
 const { query, mutate } = createTestClient(server);
+
+describe("queries", () => {
+    describe("USERS", () => {
+        const USERS = gql`
+            query {
+                users {
+                    name
+                    posts {
+                        title
+                    }
+                }
+            }
+        `;
+        beforeEach(async () => {
+            await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+            await db.createUser("Paula", "paula@paula.com", "Paula1234");
+            userId = db.users[0].id;
+        });
+
+        it("returns all users with no posts", async () => {
+            await expect(query({ query: USERS })).resolves.toMatchObject({
+                errors: undefined,
+                data: {
+                    users: [
+                        { name: "Jonas", posts: [] },
+                        { name: "Paula", posts: [] },
+                    ],
+                },
+            });
+        });
+        describe("WRITE_POST", () => {
+            const WRITE_POST = gql`
+                mutation($post: PostInput!) {
+                    write(post: $post) {
+                        author {
+                            name
+                            posts {
+                                title
+                            }
+                        }
+                    }
+                }
+            `;
+            const writePostAction = (title) =>
+                mutate({
+                    mutation: WRITE_POST,
+                    variables: { post: { title: title } },
+                });
+
+            it("adds post to user", async () => {
+                await expect(writePostAction("Some post")).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        write: { author: { name: "Jonas", posts: [{ title: "Some post" }] } },
+                    },
+                });
+            });
+        });
+    });
+});
 
 describe("mutations", () => {
     describe("SIGNUP", () => {

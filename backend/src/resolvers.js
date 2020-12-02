@@ -92,7 +92,7 @@ const resolvers = {
     User: {
         posts: async (obj, args, context) => {
             const allPosts = await context.dataSources.db.allPosts();
-            return allPosts.filter((post) => post.authorId === obj.name);
+            return allPosts.filter((post) => post.authorId === obj.id);
         },
     },
 };

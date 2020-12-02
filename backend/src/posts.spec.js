@@ -70,4 +70,64 @@ describe("mutations", () => {
             });
         });
     });
+    describe("VOTE_POST", () => {
+        let postId;
+        beforeEach(() => {
+            db.posts = [new Post("Some post", userId)];
+            postId = db.posts[0].id;
+        });
+        describe("UPVOTE_POST", () => {
+            const UPVOTE_POST = gql`
+                mutation($id: ID!) {
+                    upvote(id: $id) {
+                        title
+                        id
+                        author {
+                            name
+                        }
+                        votes
+                    }
+                }
+            `;
+            const upvoteAction = (id) => mutate({ mutation: UPVOTE_POST, variables: { id: id } });
+
+            it("calls db.upvotePost", async () => {
+                db.upvotePost = jest.fn(() => {});
+                await upvoteAction(postId);
+                expect(db.upvotePost).toHaveBeenCalledWith(postId, userId);
+            });
+
+            it("throws error when post id invalid", async () => {
+                const {
+                    errors: [error],
+                } = await upvoteAction(123);
+                expect(error.message).toEqual("Invalid post");
+            });
+            it("throws error when user is invalid", async () => {
+                userId = "INVALID";
+                const {
+                    errors: [error],
+                } = await upvoteAction(postId);
+                expect(error.message).toEqual("Invalid user");
+            });
+
+            it("upvotes post", async () => {
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+            it("does not upvote post again when already upvoted by same user", async () => {
+                await upvoteAction(postId);
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
+                    },
+                });
+            });
+        });
+    });
 });

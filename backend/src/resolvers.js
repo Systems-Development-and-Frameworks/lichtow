@@ -85,8 +85,8 @@ const resolvers = {
         },
     },
     Post: {
-        author: async (obj, args, context) => {
-            return await context.dataSources.db.getUser(obj.authorId);
+        author: async (obj, args, { dataSources }) => {
+            return await dataSources.db.getUser(obj.authorId);
         },
         votes: async (obj, args, context) => {
             let values = Array.from(obj.voters.values());
@@ -95,9 +95,12 @@ const resolvers = {
         },
     },
     User: {
-        posts: async (obj, args, context) => {
-            const allPosts = await context.dataSources.db.allPosts();
+        posts: async (obj, args, { dataSources }) => {
+            const allPosts = await dataSources.db.allPosts();
             return allPosts.filter((post) => post.authorId === obj.id);
+        },
+        email: (obj, args, { userId }) => {
+            return obj.id === userId ? obj.email : "";
         },
     },
 };

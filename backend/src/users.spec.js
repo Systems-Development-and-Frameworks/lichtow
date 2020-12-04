@@ -25,7 +25,9 @@ describe("queries", () => {
         const USERS = gql`
             query {
                 users {
+                    id
                     name
+                    email
                     posts {
                         title
                     }
@@ -54,8 +56,20 @@ describe("queries", () => {
                 errors: undefined,
                 data: {
                     users: [
-                        { name: "Jonas", posts: [] },
-                        { name: "Paula", posts: [] },
+                        { id: db.users[0].id, name: "Jonas", email: "jonas@jonas.com", posts: [] },
+                        { id: db.users[1].id, name: "Paula", email: "", posts: [] },
+                    ],
+                },
+            });
+        });
+        it("only returns email of logged in user", async () => {
+            userId = db.users[1].id;
+            await expect(userQuery()).resolves.toMatchObject({
+                errors: undefined,
+                data: {
+                    users: [
+                        { id: db.users[0].id, name: "Jonas", email: "", posts: [] },
+                        { id: db.users[1].id, name: "Paula", email: "paula@paula.com", posts: [] },
                     ],
                 },
             });

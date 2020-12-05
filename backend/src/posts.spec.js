@@ -38,10 +38,12 @@ describe("queries", () => {
 
         it("throws error when user is not authorised", async () => {
             userId = null;
-            const {
-                errors: [error],
-            } = await postQuery();
-            expect(error.message).toEqual("Not Authorised!");
+            await expect(postQuery()).resolves.toMatchObject({
+                data: {
+                    posts: null,
+                },
+                errors: [expect.objectContaining({ message: "Not Authorised!" })],
+            });
         });
 
         it("returns empty array", async () => {
@@ -84,22 +86,22 @@ describe("mutations", () => {
 
         it("throws error when user is invalid", async () => {
             userId = "INVALID";
-            const {
-                errors: [error],
-                data,
-            } = await writePostAction("Some post");
-            expect(error.message).toEqual("Invalid user");
-            expect(data).toMatchObject({ write: null });
+            await expect(writePostAction("Some post")).resolves.toMatchObject({
+                data: {
+                    write: null,
+                },
+                errors: [expect.objectContaining({ message: "Invalid user" })],
+            });
         });
 
         it("throws error when user is not authorised", async () => {
             userId = null;
-            const {
-                errors: [error],
-                data,
-            } = await writePostAction("Some post");
-            expect(error.message).toEqual("Not Authorised!");
-            expect(data).toMatchObject({ write: null });
+            await expect(writePostAction("Some post")).resolves.toMatchObject({
+                data: {
+                    write: null,
+                },
+                errors: [expect.objectContaining({ message: "Not Authorised!" })],
+            });
         });
 
         it("adds a post to db.posts", async () => {
@@ -156,32 +158,32 @@ describe("mutations", () => {
             });
 
             it("throws error when post id is invalid", async () => {
-                const {
-                    errors: [error],
-                    data,
-                } = await upvoteAction("INVALID");
-                expect(error.message).toEqual("Invalid post");
-                expect(data).toMatchObject({ upvote: null });
+                await expect(upvoteAction("INVALID")).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid post" })],
+                });
             });
 
             it("throws error when user is invalid", async () => {
                 userId = "INVALID";
-                const {
-                    errors: [error],
-                    data,
-                } = await upvoteAction(postId);
-                expect(error.message).toEqual("Invalid user");
-                expect(data).toMatchObject({ upvote: null });
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid user" })],
+                });
             });
 
             it("throws error when user is not authorised", async () => {
                 userId = null;
-                const {
-                    errors: [error],
-                    data,
-                } = await upvoteAction(postId);
-                expect(error.message).toEqual("Not Authorised!");
-                expect(data).toMatchObject({ upvote: null });
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Not Authorised!" })],
+                });
             });
 
             it("upvotes post", async () => {
@@ -225,35 +227,35 @@ describe("mutations", () => {
             });
 
             it("throws error when post id is invalid", async () => {
-                const {
-                    errors: [error],
-                    data,
-                } = await downvoteAction("INVALID");
-                expect(error.message).toEqual("Invalid post");
-                expect(data).toMatchObject({ downvote: null });
+                await expect(downvoteAction("INVALID")).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid post" })],
+                });
             });
 
             it("throws error when user is invalid", async () => {
                 userId = "INVALID";
-                const {
-                    errors: [error],
-                    data,
-                } = await downvoteAction(postId);
-                expect(error.message).toEqual("Invalid user");
-                expect(data).toMatchObject({ downvote: null });
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid user" })],
+                });
             });
 
             it("throws error when user is not authorised", async () => {
                 userId = null;
-                const {
-                    errors: [error],
-                    data,
-                } = await downvoteAction(postId);
-                expect(error.message).toEqual("Not Authorised!");
-                expect(data).toMatchObject({ downvote: null });
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Not Authorised!" })],
+                });
             });
 
-            it("dowvotes post", async () => {
+            it("downvotes post", async () => {
                 await expect(downvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
@@ -303,21 +305,21 @@ describe("mutations", () => {
         });
 
         it("throws error when post id invalid", async () => {
-            const {
-                errors: [error],
-                data,
-            } = await deletePostAction("INVALID");
-            expect(error.message).toEqual("Invalid post");
-            expect(data).toMatchObject({ delete: null });
+            await expect(deletePostAction("INVALID")).resolves.toMatchObject({
+                data: {
+                    delete: null,
+                },
+                errors: [expect.objectContaining({ message: "Invalid post" })],
+            });
         });
 
         it("throws error if user is not the author of the post", async () => {
-            const {
-                errors: [error],
-                data,
-            } = await deletePostAction(db.posts[1].id);
-            expect(error.message).toEqual("Only authors are allowed to delete posts");
-            expect(data).toMatchObject({ delete: null });
+            await expect(deletePostAction(db.posts[1].id)).resolves.toMatchObject({
+                data: {
+                    delete: null,
+                },
+                errors: [expect.objectContaining({ message: "Only authors are allowed to delete posts" })],
+            });
         });
 
         it("removes a post from db.posts", async () => {

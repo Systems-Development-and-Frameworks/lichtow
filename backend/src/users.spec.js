@@ -45,10 +45,12 @@ describe("queries", () => {
 
         it("throws error when user is not authorised", async () => {
             userId = null;
-            const {
-                errors: [error],
-            } = await userQuery();
-            expect(error.message).toEqual("Not Authorised!");
+            await expect(userQuery()).resolves.toMatchObject({
+                data: {
+                    users: null,
+                },
+                errors: [expect.objectContaining({ message: "Not Authorised!" })],
+            });
         });
 
         it("returns all users with no posts", async () => {
@@ -102,6 +104,34 @@ describe("queries", () => {
                 });
             });
         });
+        describe("DELETE_POST", () => {
+            const DELETE_POST = gql`
+                mutation($id: ID!) {
+                    delete(id: $id) {
+                        author {
+                            name
+                            posts {
+                                title
+                            }
+                        }
+                    }
+                }
+            `;
+            const deletePostAction = (postId) =>
+                mutate({
+                    mutation: DELETE_POST,
+                    variables: { id: postId },
+                });
+            it("removes post from user", async () => {
+                db.posts = [new Post("Some post", userId)];
+                await expect(deletePostAction(db.posts[0].id)).resolves.toMatchObject({
+                    errors: undefined,
+                    data: {
+                        delete: { author: { name: "Jonas", posts: [] } },
+                    },
+                });
+            });
+        });
     });
 });
 
@@ -116,12 +146,12 @@ describe("mutations", () => {
             mutate({ mutation: SIGNUP, variables: { name: name, email: email, password: password } });
 
         it("throws an error when password is too short", async () => {
-            const {
-                errors: [error],
-                data,
-            } = await signupAction("Jonas", "jonas@jonas.com", "short");
-            expect(error.message).toEqual("Password is too short");
-            expect(data).toMatchObject({ signup: null });
+            await expect(signupAction("Jonas", "jonas@jonas.com", "short")).resolves.toMatchObject({
+                data: {
+                    signup: null,
+                },
+                errors: [expect.objectContaining({ message: "Password is too short" })],
+            });
         });
 
         it("adds a user to db.users", async () => {
@@ -142,12 +172,12 @@ describe("mutations", () => {
         });
         it("throws error if user with email already exists", async () => {
             await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
-            const {
-                errors: [error],
-                data,
-            } = await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
-            expect(error.message).toEqual("User with this email already exists");
-            expect(data).toMatchObject({ signup: null });
+            await expect(signupAction("Jonas", "jonas@jonas.com", "Jonas1234")).resolves.toMatchObject({
+                data: {
+                    signup: null,
+                },
+                errors: [expect.objectContaining({ message: "User with this email already exists" })],
+            });
         });
     });
     describe("LOGIN", () => {
@@ -165,20 +195,20 @@ describe("mutations", () => {
         });
 
         it("throws error if there is no user with this email", async () => {
-            const {
-                errors: [error],
-                data,
-            } = await loginAction("wrong email", "Jonas1234");
-            expect(error.message).toEqual("No user with this email");
-            expect(data).toMatchObject({ login: null });
+            await expect(loginAction("wrong email", "Jonas1234")).resolves.toMatchObject({
+                data: {
+                    login: null,
+                },
+                errors: [expect.objectContaining({ message: "No user with this email" })],
+            });
         });
         it("throws error if the password is incorrect", async () => {
-            const {
-                errors: [error],
-                data,
-            } = await loginAction("jonas@jonas.com", "wrongPassword");
-            expect(error.message).toEqual("Password is incorrect");
-            expect(data).toMatchObject({ login: null });
+            await expect(loginAction("jonas@jonas.com", "wrongPassword")).resolves.toMatchObject({
+                data: {
+                    login: null,
+                },
+                errors: [expect.objectContaining({ message: "Password is incorrect" })],
+            });
         });
 
         it("logs user in successfully", async () => {

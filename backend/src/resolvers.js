@@ -3,8 +3,8 @@ import bcrypt from "bcrypt";
 
 const resolvers = {
     Query: {
-        users: (parent, args, context) => context.dataSources.db.allUsers(),
-        posts: (parent, args, context) => context.dataSources.db.allPosts(),
+        users: (_, args, context) => context.dataSources.db.allUsers(),
+        posts: (_, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
         signup: async (_, args, { dataSources }) => {

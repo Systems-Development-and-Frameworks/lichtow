@@ -1,4 +1,5 @@
 import { DataSource } from "apollo-datasource";
+import { delegateToSchema } from "apollo-server";
 import bcrypt, { hash } from "bcrypt";
 import crypto from "crypto";
 
@@ -26,18 +27,25 @@ export class User {
 }
 
 export class Neo4JDataSource extends DataSource {
-    constructor() {
+    constructor({ subSchema }) {
         super();
+        this.subSchema = subSchema;
         this.posts = [];
         this.users = [];
     }
 
-    initialize({ context }) {
-        this.driver = context.driver;
-    }
+    // initialize({ context }) {
+    //     this.driver = context.driver;
+    // }
 
-    allUsers() {
-        return Promise.resolve(this.users);
+    async allUsers() {
+        await delegateToSchema({
+            schema: subschema,
+            operation: "query",
+            fieldName: "User",
+        });
+        return user;
+        // return Promise.resolve(this.users);
     }
 
     async createUser(name, email, password) {

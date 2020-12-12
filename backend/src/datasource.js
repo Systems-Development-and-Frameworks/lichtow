@@ -32,7 +32,9 @@ export class Neo4JDataSource extends DataSource {
         this.users = [];
     }
 
-    initialize({ context }) {}
+    initialize({ context }) {
+        this.driver = context.driver;
+    }
 
     allUsers() {
         return Promise.resolve(this.users);

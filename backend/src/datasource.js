@@ -25,7 +25,7 @@ export class User {
     }
 }
 
-export class InMemoryDataSource extends DataSource {
+export class Neo4JDataSource extends DataSource {
     constructor() {
         super();
         this.posts = [];

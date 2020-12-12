@@ -1,12 +1,12 @@
 import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { InMemoryDataSource, User, Post } from "./datasource";
+import { Neo4JDataSource, User, Post } from "./datasource";
 
 let db;
 let userId;
 beforeEach(async () => {
-    db = new InMemoryDataSource();
+    db = new Neo4JDataSource();
     await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
     userId = db.users[0].id;
 });

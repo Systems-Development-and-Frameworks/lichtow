@@ -1,13 +1,13 @@
 import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { InMemoryDataSource, User, Post } from "./datasource";
+import { Neo4JDataSource, User, Post } from "./datasource";
 
 let db;
 let jwt;
 let userId;
 beforeEach(() => {
-    db = new InMemoryDataSource();
+    db = new Neo4JDataSource();
     userId = null;
     jwt = null;
 });

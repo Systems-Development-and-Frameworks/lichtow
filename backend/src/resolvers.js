@@ -1,9 +1,11 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
+import { neo4jgraphql } from "neo4j-graphql-js";
 
 const resolvers = {
     Query: {
-        users: (_, args, context) => context.dataSources.db.allUsers(),
+        // users: (_, args, context) => context.dataSources.db.allUsers(),
+        users: (object, params, context, resolveInfo) => neo4jgraphql(object, params, context, resolveInfo),
         posts: (_, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {

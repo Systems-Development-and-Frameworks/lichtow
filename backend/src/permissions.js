@@ -6,6 +6,9 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, ctx, 
 
 export const permissions = shield(
     {
+        Query: {
+            users: allow,
+        },
         Mutation: {
             signup: allow,
             login: allow,
@@ -13,6 +16,7 @@ export const permissions = shield(
     },
     {
         allowExternalErrors: true,
-        fallbackRule: isAuthenticated,
+        // fallbackRule: isAuthenticated,
+        fallbackRule: allow,
     }
 );

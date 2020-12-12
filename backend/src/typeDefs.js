@@ -5,14 +5,14 @@ const typeDefs = gql`
         id: ID!
         title: String!
         votes: Int!
-        author: User!
+        author: User! @relation(name: "WROTE", direction:"IN")
     }
 
     type User {
         id: ID!
         name: String!
         email: String!
-        posts: [Post]
+        posts: [Post] @relation(name: "WROTE", direction:"OUT")
     }
 
     type Query {

@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@graphql-tools/stitch": "^7.1.4",
     "apollo-datasource": "^0.7.2",
     "apollo-server": "^2.19.0",
     "bcrypt": "^5.0.0",

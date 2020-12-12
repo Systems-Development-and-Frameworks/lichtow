@@ -8,14 +8,20 @@ import { permissions } from "./permissions";
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
 
-const db = new Neo4JDataSource();
-
 const driver = neo4j.driver(
     process.env.NEO4J_URL,
     neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
 );
-
 const session = driver.session();
+
+const schema = makeAugmentedSchema({ typeDefs });
+const db = new Neo4JDataSource({ subSchema: schema });
+const stitchedSchema = stitchSchemas({
+    subschemas: [schema],
+    typeDefs,
+    resolvers,
+});
+
 const personName = "PasswordUser";
 const result = session.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", {
     name: personName,
@@ -35,14 +41,11 @@ const context = ({ req }) => {
         return { userId: null, jwt, driver };
     }
 };
-// const schema = makeExecutableSchema({ typeDefs, resolvers });
-// const augmentedSchema = augmentSchema(schema);
-const schema = makeAugmentedSchema({ typeDefs, resolvers });
 
 export default class Server {
     constructor(opts) {
         const defaults = {
-            schema: applyMiddleware(schema, permissions),
+            schema: applyMiddleware(stitchedSchema, permissions),
             dataSources,
             context,
         };

@@ -3,13 +3,15 @@ import { applyMiddleware } from "graphql-middleware";
 import jwt from "jsonwebtoken";
 import neo4j from "neo4j-driver";
 import { makeAugmentedSchema } from "neo4j-graphql-js";
+import { stitchSchemas } from "@graphql-tools/stitch";
 import { Neo4JDataSource, Post, User } from "./datasource";
 import { permissions } from "./permissions";
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
 
+
 const driver = neo4j.driver(
-    process.env.NEO4J_URL,
+    'neo4j://localhost:7687',
     neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
 );
 const session = driver.session();

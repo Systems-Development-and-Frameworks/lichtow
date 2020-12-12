@@ -4,7 +4,7 @@ import { neo4jgraphql } from "neo4j-graphql-js";
 
 const resolvers = {
     Query: {
-        users: (_, args, context) => context.dataSources.db.allUsers(),
+        users: (_, args, context, info) => context.dataSources.db.allUsers(context, info),
         // users: (object, params, context, resolveInfo) => neo4jgraphql(object, params, context, resolveInfo),
         posts: (_, args, context) => context.dataSources.db.allPosts(),
     },

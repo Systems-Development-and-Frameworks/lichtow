@@ -38,13 +38,14 @@ export class Neo4JDataSource extends DataSource {
     //     this.driver = context.driver;
     // }
 
-    async allUsers() {
-        await delegateToSchema({
-            schema: subschema,
+    allUsers(context, info) {
+        return delegateToSchema({
+            schema: this.subSchema,
             operation: "query",
             fieldName: "User",
+            context, 
+            info
         });
-        return user;
         // return Promise.resolve(this.users);
     }
 

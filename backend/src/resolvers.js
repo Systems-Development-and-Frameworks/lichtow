@@ -32,7 +32,7 @@ const resolvers = ({ subschema }) => ({
             }
             const newUser = await User.build(name, email, password);
             await session.writeTransaction((tx) =>
-                tx.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", newUser)
+                tx.run("CREATE (a:User {name: $name, email: $email, id: $id, password: $password}) RETURN a", newUser)
             );
             session.close();
             return newUser.id;
@@ -57,13 +57,30 @@ const resolvers = ({ subschema }) => ({
             let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
             return token;
         },
-        write: async (_, args, { dataSources, userId }) => {
+        write: async (_, args, context) => {
             const title = args.post.title;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
+
+            const session = context.driver.session();
+            const { records: userRecords } = await session.readTransaction((tx) =>
+                tx.run("MATCH (n:User) WHERE n.id = $id RETURN n", { id: context.userId }())
+            );
+            console.log(records);
+            session.close();
+            if (userRecords.length === 0) {
+                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            return await dataSources.db.createPost(title, userId);
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "Post",
+                args: {
+                    author: context.userId,
+                    title: title,
+                    id: "123",
+                },
+                context,
+                info,
+            });
         },
         upvote: async (_, args, { dataSources, userId }) => {
             const postId = args.id;

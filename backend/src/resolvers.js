@@ -1,26 +1,40 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
-import { neo4jgraphql } from "neo4j-graphql-js";
+import { delegateToSchema } from "@graphql-tools/delegate";
+import User from "./user";
 
-const resolvers = {
+const resolvers = ({ subschema }) => ({
     Query: {
-        users: (_, args, context, info) => context.dataSources.db.allUsers(context, info),
-        // users: (object, params, context, resolveInfo) => neo4jgraphql(object, params, context, resolveInfo),
+        users: (_, args, context, info) =>
+            delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "User",
+                context,
+                info,
+            }),
         posts: (_, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
-        signup: async (_, args, { dataSources }) => {
+        signup: async (_, args, context, info) => {
             const name = args.name;
             const email = args.email;
             const password = args.password;
-            if (password.length < 9) {
+            if (password.length < 8) {
                 throw new UserInputError("Password is too short", { invalidArgs: password });
             }
-            const users = await dataSources.db.allUsers();
-            if (users.find((user) => user.email === email)) {
+            const session = context.driver.session();
+            const { records: userRecords } = await session.readTransaction((tx) =>
+                tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
+            );
+            if (userRecords.length > 0) {
                 throw new UserInputError("User with this email already exists", { invalidArgs: email });
             }
-            const newUser = await dataSources.db.createUser(name, email, password);
+            const newUser = await User.build(name, email, password);
+            await session.writeTransaction((tx) =>
+                tx.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", newUser)
+            );
+            session.close();
             return newUser.id;
         },
         login: async (_, args, { dataSources, jwt }) => {
@@ -105,6 +119,6 @@ const resolvers = {
             return obj.id === userId ? obj.email : "";
         },
     },
-};
+});
 
 export default resolvers;

@@ -24,12 +24,12 @@ const stitchedSchema = stitchSchemas({
     resolvers: customResolvers,
 });
 
-const personName = "PasswordUser";
-const result = session.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", {
-    name: personName,
-    email: "mail@mail.com",
-    password: "superPassword",
-});
+// const personName = "PasswordUser";
+// const result = session.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", {
+//     name: personName,
+//     email: "mail@mail.com",
+//     password: "superPassword",
+// });
 
 const context = ({ req }) => {
     try {

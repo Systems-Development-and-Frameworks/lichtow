@@ -37,13 +37,19 @@ const resolvers = ({ subschema }) => ({
             session.close();
             return newUser.id;
         },
-        login: async (_, args, { dataSources, jwt }) => {
+        login: async (_, args, { jwt, driver }) => {
             const email = args.email;
             const password = args.password;
-            const user = await dataSources.db.getUserByEmail(email);
-            if (!user) {
+
+            const session = driver.session();
+            const { records: userRecords } = await session.readTransaction((tx) =>
+                tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
+            );
+            session.close();
+            if (userRecords.length === 0) {
                 throw new UserInputError("No user with this email", { invalidArgs: email });
             }
+            const user = userRecords[0]._fields[0].properties; //TODO: check if there is a better way to access the node
             const isCorrectPassword = await bcrypt.compare(password, user.password);
             if (!isCorrectPassword) {
                 throw new UserInputError("Password is incorrect");

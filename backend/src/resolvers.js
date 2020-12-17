@@ -13,7 +13,14 @@ const resolvers = ({ subschema }) => ({
                 context,
                 info,
             }),
-        posts: (_, args, context) => context.dataSources.db.allPosts(),
+        posts: (_, args, context, info) =>
+            delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "Post",
+                context,
+                info,
+            }),
     },
     Mutation: {
         signup: async (_, args, context, info) => {

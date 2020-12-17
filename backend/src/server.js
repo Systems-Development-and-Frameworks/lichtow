@@ -1,35 +1,22 @@
 import { ApolloServer, gql } from "apollo-server";
 import { applyMiddleware } from "graphql-middleware";
 import jwt from "jsonwebtoken";
-import neo4j from "neo4j-driver";
-import { makeAugmentedSchema } from "neo4j-graphql-js";
 import { stitchSchemas } from "@graphql-tools/stitch";
 import { permissions } from "./permissions";
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
+import neo4jSchema, { driver } from './neo4jSchema'
 
-const driver = neo4j.driver(
-    "neo4j://localhost:7687",
-    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
-);
-const session = driver.session();
-
-const schema = makeAugmentedSchema({ typeDefs });
-
-const customResolvers = resolvers({ subschema: schema });
+const customResolvers = resolvers({ subschema: neo4jSchema});
 
 const stitchedSchema = stitchSchemas({
-    subschemas: [schema],
-    typeDefs,
-    resolvers: customResolvers,
+  subschemas: [neo4jSchema],
+  // if you want to expose neo4j-graphql-js auto-generated resolvers only in
+  // development, you could do:
+  //   subschemas: (process.env.NODE_ENV === 'development' ? [neo4jSchema] : []),
+  resolvers: customResolvers,
+  typeDefs,
 });
-
-// const personName = "PasswordUser";
-// const result = session.run("CREATE (a:User {name: $name, email: $email, password: $password}) RETURN a", {
-//     name: personName,
-//     email: "mail@mail.com",
-//     password: "superPassword",
-// });
 
 const context = ({ req }) => {
     try {

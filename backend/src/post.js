@@ -4,5 +4,6 @@ export default class Post {
     constructor(title) {
         this.id = crypto.randomBytes(16).toString("hex");
         this.title = title;
+        this.votes = 0;
     }
 }

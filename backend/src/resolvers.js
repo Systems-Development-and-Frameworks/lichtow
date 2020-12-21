@@ -87,18 +87,20 @@ const resolvers = ({ subschema }) => ({
             let post = new Post(title);
             session = context.driver.session();
             await session
-                .writeTransaction((tx) => {
+                .writeTransaction((tx) =>
                     tx.run(
-                        "MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title }) RETURN p {.*}",
+                        "MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title, votes: $votes })",
                         {
                             ...post,
                             userId: context.userId,
                         }
-                    );
-                })
+                    )
+                )
                 .catch((err) => console.log(err))
                 .finally(() => session.close());
 
+            //TODO: find a better way to return a post because if id is not in the query the post
+            //will not be matched
             const posts = await delegateToSchema({
                 schema: subschema,
                 operation: "query",
@@ -108,29 +110,93 @@ const resolvers = ({ subschema }) => ({
             });
             return posts.find((p) => p.id === post.id);
         },
-        upvote: async (_, args, { dataSources, userId }) => {
+        upvote: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            let session = context.driver.session();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (userRecords.length === 0) {
+                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+            session = context.driver.session();
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            return await dataSources.db.upvotePost(postId, userId);
+
+            session = context.driver.session();
+            await session
+                .writeTransaction((tx) =>
+                    tx.run(
+                        "MATCH (u:User {id:$userId}), (p:Post {id:$postId}) MERGE (u)-[r:VOTED]->(p) ON CREATE SET r.value = $value ON MATCH SET r.value = $value",
+                        {
+                            postId,
+                            value: 1,
+                            userId: context.userId,
+                        }
+                    )
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+
+            //TODO
+            const posts = await delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "Post",
+                context,
+                info,
+            });
+            return posts.find((p) => p.id === postId);
         },
-        downvote: async (_, args, { dataSources, userId }) => {
+        downvote: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            let session = context.driver.session();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (userRecords.length === 0) {
+                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+            session = context.driver.session();
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            return await dataSources.db.downvotePost(postId, userId);
+
+            session = context.driver.session();
+            await session
+                .writeTransaction((tx) =>
+                    tx.run(
+                        "MATCH (u:User {id:$userId}), (p:Post {id:$postId}) MERGE (u)-[r:VOTED]->(p) ON CREATE SET r.value = $value ON MATCH SET r.value = $value",
+                        {
+                            postId,
+                            value: -1,
+                            userId: context.userId,
+                        }
+                    )
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+
+            //TODO
+            const posts = await delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "Post",
+                context,
+                info,
+            });
+            return posts.find((p) => p.id === postId);
         },
 
         delete: async (_, args, { dataSources, userId }) => {
@@ -150,21 +216,25 @@ const resolvers = ({ subschema }) => ({
         },
     },
     Post: {
-        // author: async (obj, args, { dataSources }) => {
-        //     return await dataSources.db.getUser(obj.authorId);
-        // },
-        votes: async (obj, args, context) => {
-            let values = Array.from(obj.voters.values());
-            let votes = values.reduce((sum, number) => sum + number, 0);
+        votes: async (obj, _, context) => {
+            const session = context.driver.session();
+            const { records: voteRecords } = await session
+                .readTransaction((tx) =>
+                    tx.run("MATCH (u)-[r:VOTED]->(p:Post {id:$postId}) RETURN r.value", {
+                        postId: obj.id,
+                    })
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            let votes = 0;
+            voteRecords.forEach((voteRecord) => {
+                votes += voteRecord._fields[0];
+            });
             return votes;
         },
     },
     User: {
-        // posts: async (obj, args, { dataSources }) => {
-        //     const allPosts = await dataSources.db.allPosts();
-        //     return allPosts.filter((post) => post.authorId === obj.id);
-        // },
-        email: (obj, args, { userId }) => {
+        email: (obj, _, { userId }) => {
             return obj.id === userId ? obj.email : "";
         },
     },

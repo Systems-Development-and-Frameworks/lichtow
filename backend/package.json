@@ -6,7 +6,8 @@
   "scripts": {
     "serve": "nodemon -r esm src/index.js",
     "lint": "eslint --ext .js",
-    "test": "jest --verbose"
+    "test": "jest --verbose",
+    "clean": "kill -9 $(lsof -t -i:4000)"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +20,7 @@
     "bcrypt": "^5.0.0",
     "dotenv": "^8.2.0",
     "esm": "^3.2.25",
-    "graphql": "^15.4.0",
+    "graphql": "^14.2.1",
     "graphql-middleware": "^4.0.2",
     "graphql-shield": "^7.4.2",
     "jsonwebtoken": "^8.5.1",

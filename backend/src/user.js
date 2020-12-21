@@ -1,4 +1,4 @@
-import bcrypt, { hash } from "bcrypt";
+import bcrypt from "bcrypt";
 import crypto from "crypto";
 
 const saltRounds = 10;

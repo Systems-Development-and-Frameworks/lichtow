@@ -2,6 +2,7 @@ import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
 import { delegateToSchema } from "@graphql-tools/delegate";
 import User from "./user";
+import Post from "./post";
 
 const resolvers = ({ subschema }) => ({
     Query: {
@@ -23,25 +24,32 @@ const resolvers = ({ subschema }) => ({
             }),
     },
     Mutation: {
-        signup: async (_, args, context, info) => {
+        signup: async (_, args, { driver }) => {
             const name = args.name;
             const email = args.email;
             const password = args.password;
             if (password.length < 8) {
                 throw new UserInputError("Password is too short", { invalidArgs: password });
             }
-            const session = context.driver.session();
+            const session = driver.session();
             const { records: userRecords } = await session.readTransaction((tx) =>
-                tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
+                tx
+                    .run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
+                    .catch((err) => console.log(err))
             );
             if (userRecords.length > 0) {
                 throw new UserInputError("User with this email already exists", { invalidArgs: email });
             }
             const newUser = await User.build(name, email, password);
-            await session.writeTransaction((tx) =>
-                tx.run("CREATE (a:User {name: $name, email: $email, id: $id, password: $password}) RETURN a", newUser)
-            );
-            session.close();
+            await session
+                .writeTransaction((tx) =>
+                    tx.run(
+                        "CREATE (a:User {name: $name, email: $email, id: $id, password: $password}) RETURN a",
+                        newUser
+                    )
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
             return newUser.id;
         },
         login: async (_, args, { jwt, driver }) => {
@@ -49,10 +57,10 @@ const resolvers = ({ subschema }) => ({
             const password = args.password;
 
             const session = driver.session();
-            const { records: userRecords } = await session.readTransaction((tx) =>
-                tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
-            );
-            session.close();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
             if (userRecords.length === 0) {
                 throw new UserInputError("No user with this email", { invalidArgs: email });
             }
@@ -67,26 +75,38 @@ const resolvers = ({ subschema }) => ({
         write: async (_, args, context, info) => {
             const title = args.post.title;
 
-            const session = context.driver.session();
-            const { records: userRecords } = await session.readTransaction((tx) =>
-                tx.run("MATCH (n:User) WHERE n.id = $id RETURN n", { id: context.userId })
-            );
-            session.close();
+            let session = context.driver.session();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+
             if (userRecords.length === 0) {
                 throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            return delegateToSchema({
+            let post = new Post(title);
+            session = context.driver.session();
+            await session
+                .writeTransaction((tx) => {
+                    tx.run(
+                        "MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title }) RETURN p {.*}",
+                        {
+                            ...post,
+                            userId: context.userId,
+                        }
+                    );
+                })
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+
+            const posts = await delegateToSchema({
                 schema: subschema,
-                operation: "mutation",
+                operation: "query",
                 fieldName: "Post",
-                args: {
-                    author: context.userId,
-                    title: title,
-                    id: "123",
-                },
                 context,
                 info,
             });
+            return posts.find((p) => p.id === post.id);
         },
         upvote: async (_, args, { dataSources, userId }) => {
             const postId = args.id;
@@ -130,9 +150,9 @@ const resolvers = ({ subschema }) => ({
         },
     },
     Post: {
-        author: async (obj, args, { dataSources }) => {
-            return await dataSources.db.getUser(obj.authorId);
-        },
+        // author: async (obj, args, { dataSources }) => {
+        //     return await dataSources.db.getUser(obj.authorId);
+        // },
         votes: async (obj, args, context) => {
             let values = Array.from(obj.voters.values());
             let votes = values.reduce((sum, number) => sum + number, 0);
@@ -140,10 +160,10 @@ const resolvers = ({ subschema }) => ({
         },
     },
     User: {
-        posts: async (obj, args, { dataSources }) => {
-            const allPosts = await dataSources.db.allPosts();
-            return allPosts.filter((post) => post.authorId === obj.id);
-        },
+        // posts: async (obj, args, { dataSources }) => {
+        //     const allPosts = await dataSources.db.allPosts();
+        //     return allPosts.filter((post) => post.authorId === obj.id);
+        // },
         email: (obj, args, { userId }) => {
             return obj.id === userId ? obj.email : "";
         },

@@ -7,7 +7,9 @@
     "serve": "nodemon -r esm src/index.js",
     "lint": "eslint --ext .js",
     "test": "jest --verbose",
-    "clean": "kill -9 $(lsof -t -i:4000)"
+    "clean": "kill -9 $(lsof -t -i:4000)",
+    "db:seed": "node -r esm src/db/seed.js",
+    "db:clean": "node -r esm src/db/clean.js"
   },
   "keywords": [],
   "author": "",

@@ -64,14 +64,13 @@ const resolvers = ({ subschema }) => ({
             let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
             return token;
         },
-        write: async (_, args, context) => {
+        write: async (_, args, context, info) => {
             const title = args.post.title;
 
             const session = context.driver.session();
             const { records: userRecords } = await session.readTransaction((tx) =>
-                tx.run("MATCH (n:User) WHERE n.id = $id RETURN n", { id: context.userId }())
+                tx.run("MATCH (n:User) WHERE n.id = $id RETURN n", { id: context.userId })
             );
-            console.log(records);
             session.close();
             if (userRecords.length === 0) {
                 throw new UserInputError("Invalid user", { invalidArgs: context.userId });

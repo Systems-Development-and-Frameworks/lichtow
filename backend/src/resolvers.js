@@ -199,20 +199,43 @@ const resolvers = ({ subschema }) => ({
             return posts.find((p) => p.id === postId);
         },
 
-        delete: async (_, args, { dataSources, userId }) => {
+        delete: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
+
+            let session = context.driver.session();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (userRecords.length === 0) {
+                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+            session = context.driver.session();
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            if (post.authorId !== userId) {
+            session = context.driver.session();
+            const { records: authorRecords } = await session
+                .readTransaction((tx) =>
+                    tx.run("MATCH (u:User)-[:WROTE]->(p:Post {id: $id}) RETURN u ", { id: postId })
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (authorRecords[0]._fields[0].properties.id !== context.userId) {
                 throw new UserInputError("Only authors are allowed to delete posts");
             }
-            return await dataSources.db.deletePost(postId);
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "DeletePost",
+                args: { id: postId },
+                context,
+                info,
+            });
         },
     },
     Post: {

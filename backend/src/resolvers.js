@@ -243,16 +243,13 @@ const resolvers = ({ subschema }) => ({
             const session = context.driver.session();
             const { records: voteRecords } = await session
                 .readTransaction((tx) =>
-                    tx.run("MATCH (u)-[r:VOTED]->(p:Post {id:$postId}) RETURN r.value", {
+                    tx.run("MATCH (u)-[r:VOTED]->(p:Post {id:$postId}) RETURN sum(r.value)", {
                         postId: obj.id,
                     })
                 )
                 .catch((err) => console.log(err))
                 .finally(() => session.close());
-            let votes = 0;
-            voteRecords.forEach((voteRecord) => {
-                votes += voteRecord._fields[0];
-            });
+            let votes = voteRecords[0]._fields[0];
             return votes;
         },
     },

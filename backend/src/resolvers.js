@@ -88,13 +88,10 @@ const resolvers = ({ subschema }) => ({
             session = context.driver.session();
             await session
                 .writeTransaction((tx) =>
-                    tx.run(
-                        "MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title, votes: $votes })",
-                        {
-                            ...post,
-                            userId: context.userId,
-                        }
-                    )
+                    tx.run("MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title })", {
+                        ...post,
+                        userId: context.userId,
+                    })
                 )
                 .catch((err) => console.log(err))
                 .finally(() => session.close());
@@ -236,21 +233,6 @@ const resolvers = ({ subschema }) => ({
                 context,
                 info,
             });
-        },
-    },
-    Post: {
-        votes: async (obj, _, context) => {
-            const session = context.driver.session();
-            const { records: voteRecords } = await session
-                .readTransaction((tx) =>
-                    tx.run("MATCH (u)-[r:VOTED]->(p:Post {id:$postId}) RETURN sum(r.value)", {
-                        postId: obj.id,
-                    })
-                )
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-            let votes = voteRecords[0]._fields[0];
-            return votes;
         },
     },
     User: {

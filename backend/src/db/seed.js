@@ -22,25 +22,25 @@ const seed = async () => {
         new Post("Yet another post"),
     ];
     await session.writeTransaction((tx) =>
-        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id, votes: $votes})", {
+        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id})", {
             ...posts[0],
             userId: jonas.id,
         })
     );
     await session.writeTransaction((tx) =>
-        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id, votes: $votes})", {
+        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id})", {
             ...posts[1],
             userId: jonas.id,
         })
     );
     await session.writeTransaction((tx) =>
-        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id, votes: $votes})", {
+        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id})", {
             ...posts[2],
             userId: paula.id,
         })
     );
     await session.writeTransaction((tx) =>
-        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id, votes: $votes})", {
+        tx.run("MATCH (u: User {id: $userId}) CREATE (u)-[:WROTE]->(a:Post {title: $title, id: $id})", {
             ...posts[3],
             userId: paula.id,
         })

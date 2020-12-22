@@ -11,7 +11,7 @@ const typeDefs = gql`
     type Post {
         id: ID!
         title: String!
-        votes: Int!
+        votes: Int! @cypher(statement: "MATCH (:User)-[r:VOTED]->(this) RETURN sum(r.value)")
         author: User! @relation(name: "WROTE", direction: "IN")
     }
 

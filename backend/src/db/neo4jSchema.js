@@ -11,7 +11,7 @@ const typeDefs = gql`
     type Post {
         id: ID!
         title: String!
-        votes: Int! @cypher(statement: "MATCH (:User)-[r:VOTED]->(this) RETURN sum(r.value)")
+        votes: Int! @cypher(statement: "MATCH (:User)-[v:VOTED]->(this) RETURN sum(v.value)")
         author: User! @relation(name: "WROTE", direction: "IN")
     }
 
@@ -20,6 +20,17 @@ const typeDefs = gql`
         name: String!
         email: String!
         posts: [Post] @relation(name: "WROTE", direction: "OUT")
+    }
+
+    type Mutation {
+        votePost(value: Int!, userId: ID!, postId: ID!): Post
+            @cypher(
+                statement: "MATCH (u:User {id:$userId}), (p:Post {id:$postId}) MERGE (u)-[v:VOTED]->(p) ON CREATE SET v.value = $value ON MATCH SET v.value = $value RETURN p"
+            )
+        writePost(userId: ID!, id: ID!, title: String!): Post
+            @cypher(
+                statement: "MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title }) RETURN p"
+            )
     }
 `;
 

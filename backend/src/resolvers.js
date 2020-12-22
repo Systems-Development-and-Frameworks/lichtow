@@ -6,7 +6,7 @@ import Post from "./post";
 
 const resolvers = ({ subschema }) => ({
     Query: {
-        users: (_, args, context, info) =>
+        users: (_, __, context, info) =>
             delegateToSchema({
                 schema: subschema,
                 operation: "query",
@@ -14,7 +14,7 @@ const resolvers = ({ subschema }) => ({
                 context,
                 info,
             }),
-        posts: (_, args, context, info) =>
+        posts: (_, __, context, info) =>
             delegateToSchema({
                 schema: subschema,
                 operation: "query",
@@ -84,28 +84,16 @@ const resolvers = ({ subschema }) => ({
             if (userRecords.length === 0) {
                 throw new UserInputError("Invalid user", { invalidArgs: context.userId });
             }
-            let post = new Post(title);
-            session = context.driver.session();
-            await session
-                .writeTransaction((tx) =>
-                    tx.run("MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title })", {
-                        ...post,
-                        userId: context.userId,
-                    })
-                )
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
 
-            //TODO: find a better way to return a post because if id is not in the query the post
-            //will not be matched
-            const posts = await delegateToSchema({
+            let post = new Post(title);
+            return delegateToSchema({
                 schema: subschema,
-                operation: "query",
-                fieldName: "Post",
+                operation: "mutation",
+                fieldName: "writePost",
+                args: { ...post, userId: context.userId },
                 context,
                 info,
             });
-            return posts.find((p) => p.id === post.id);
         },
         upvote: async (_, args, context, info) => {
             const postId = args.id;
@@ -126,30 +114,14 @@ const resolvers = ({ subschema }) => ({
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
 
-            session = context.driver.session();
-            await session
-                .writeTransaction((tx) =>
-                    tx.run(
-                        "MATCH (u:User {id:$userId}), (p:Post {id:$postId}) MERGE (u)-[r:VOTED]->(p) ON CREATE SET r.value = $value ON MATCH SET r.value = $value",
-                        {
-                            postId,
-                            value: 1,
-                            userId: context.userId,
-                        }
-                    )
-                )
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-
-            //TODO
-            const posts = await delegateToSchema({
+            return delegateToSchema({
                 schema: subschema,
-                operation: "query",
-                fieldName: "Post",
+                operation: "mutation",
+                fieldName: "votePost",
+                args: { value: 1, postId, userId: context.userId },
                 context,
                 info,
             });
-            return posts.find((p) => p.id === postId);
         },
         downvote: async (_, args, context, info) => {
             const postId = args.id;
@@ -170,30 +142,14 @@ const resolvers = ({ subschema }) => ({
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
 
-            session = context.driver.session();
-            await session
-                .writeTransaction((tx) =>
-                    tx.run(
-                        "MATCH (u:User {id:$userId}), (p:Post {id:$postId}) MERGE (u)-[r:VOTED]->(p) ON CREATE SET r.value = $value ON MATCH SET r.value = $value",
-                        {
-                            postId,
-                            value: -1,
-                            userId: context.userId,
-                        }
-                    )
-                )
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-
-            //TODO
-            const posts = await delegateToSchema({
+            return delegateToSchema({
                 schema: subschema,
-                operation: "query",
-                fieldName: "Post",
+                operation: "mutation",
+                fieldName: "votePost",
+                args: { value: -1, postId, userId: context.userId },
                 context,
                 info,
             });
-            return posts.find((p) => p.id === postId);
         },
 
         delete: async (_, args, context, info) => {
@@ -225,6 +181,7 @@ const resolvers = ({ subschema }) => ({
             if (authorRecords[0]._fields[0].properties.id !== context.userId) {
                 throw new UserInputError("Only authors are allowed to delete posts");
             }
+
             return delegateToSchema({
                 schema: subschema,
                 operation: "mutation",

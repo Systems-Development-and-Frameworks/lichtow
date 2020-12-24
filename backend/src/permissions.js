@@ -1,15 +1,27 @@
-import { ForbiddenError } from "apollo-server";
+import { ForbiddenError, UserInputError } from "apollo-server";
 import { allow, rule, shield } from "graphql-shield";
 
 const forbidden = rule({ cache: "contextual" })(async () => {
     return new ForbiddenError("Forbidden");
 });
 
-const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, ctx) => {
-    return ctx.userId !== null;
+const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, context) => {
+    if (context.userId !== null) {
+        const session = context.driver.session();
+        const { records: userRecords } = await session
+            .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+            .catch((err) => console.log(err))
+            .finally(() => session.close());
+
+        if (userRecords.length === 0) {
+            return new UserInputError("Invalid user", { invalidArgs: context.userId });
+        }
+        return true;
+    }
+    return false;
 });
 
-const isCurrentUser = rule({ cahce: "contextual" })(async (parent, args, context) => {
+const isEmailOwner = rule({ cahce: "contextual" })(async (parent, args, context) => {
     if (parent.id !== context.userId) {
         parent.email = "";
     }
@@ -30,9 +42,10 @@ export const permissions = shield(
             write: isAuthenticated,
             upvote: isAuthenticated,
             downvote: isAuthenticated,
+            delete: isAuthenticated,
         },
         User: {
-            email: isCurrentUser,
+            email: isEmailOwner,
         },
     },
     {

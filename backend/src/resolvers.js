@@ -69,23 +69,13 @@ const resolvers = ({ subschema }) => ({
             if (!isCorrectPassword) {
                 throw new UserInputError("Password is incorrect");
             }
-            let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
             return token;
         },
         write: async (_, args, context, info) => {
             const title = args.post.title;
+            const post = new Post(title);
 
-            let session = context.driver.session();
-            const { records: userRecords } = await session
-                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-
-            if (userRecords.length === 0) {
-                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
-            }
-
-            let post = new Post(title);
             return delegateToSchema({
                 schema: subschema,
                 operation: "mutation",
@@ -97,15 +87,8 @@ const resolvers = ({ subschema }) => ({
         },
         upvote: async (_, args, context, info) => {
             const postId = args.id;
-            let session = context.driver.session();
-            const { records: userRecords } = await session
-                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-            if (userRecords.length === 0) {
-                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
-            }
-            session = context.driver.session();
+            const session = context.driver.session();
+
             const { records: postRecords } = await session
                 .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
                 .catch((err) => console.log(err))
@@ -125,15 +108,8 @@ const resolvers = ({ subschema }) => ({
         },
         downvote: async (_, args, context, info) => {
             const postId = args.id;
-            let session = context.driver.session();
-            const { records: userRecords } = await session
-                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-            if (userRecords.length === 0) {
-                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
-            }
-            session = context.driver.session();
+            const session = context.driver.session();
+
             const { records: postRecords } = await session
                 .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
                 .catch((err) => console.log(err))
@@ -156,14 +132,6 @@ const resolvers = ({ subschema }) => ({
             const postId = args.id;
 
             let session = context.driver.session();
-            const { records: userRecords } = await session
-                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
-                .catch((err) => console.log(err))
-                .finally(() => session.close());
-            if (userRecords.length === 0) {
-                throw new UserInputError("Invalid user", { invalidArgs: context.userId });
-            }
-            session = context.driver.session();
             const { records: postRecords } = await session
                 .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
                 .catch((err) => console.log(err))

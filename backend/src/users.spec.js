@@ -1,24 +1,45 @@
 import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { Neo4JDataSource, User, Post } from "./datasource";
+import User from "./user";
+import { driver } from "./db/neo4jSchema";
 
-let db;
 let jwt;
 let userId;
-beforeEach(() => {
-    db = new Neo4JDataSource();
+let query;
+let mutate;
+
+const cleanDatabase = async () => {
+    await driver.session().writeTransaction((tx) => tx.run("MATCH(n) DETACH DELETE n"));
+};
+
+beforeEach(async () => {
+    await cleanDatabase();
     userId = null;
     jwt = null;
+    const server = new Server({ context });
+    const testClient = createTestClient(server);
+    ({ query, mutate } = testClient);
+});
+
+afterAll(async () => {
+    await cleanDatabase();
+    driver.close();
 });
 
 const context = () => {
-    return { userId, jwt };
+    return { userId, jwt, driver };
 };
 
-const server = new Server({ dataSources: () => ({ db }), context });
-
-const { query, mutate } = createTestClient(server);
+const createUser = async (name, email, password) => {
+    const newUser = await User.build(name, email, password);
+    await driver
+        .session()
+        .writeTransaction((tx) =>
+            tx.run("CREATE (u:User {name: $name, email: $email, id: $id, password: $password}) RETURN u", newUser)
+        );
+    return newUser.id;
+};
 
 describe("queries", () => {
     describe("USERS", () => {
@@ -37,10 +58,13 @@ describe("queries", () => {
 
         const userQuery = () => query({ query: USERS });
 
+        let jonasId;
+        let paulaId;
+
         beforeEach(async () => {
-            await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
-            await db.createUser("Paula", "paula@paula.com", "Paula1234");
-            userId = db.users[0].id;
+            jonasId = await createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+            paulaId = await createUser("Paula", "paula@paula.com", "Paula1234");
+            userId = jonasId;
         });
 
         it("throws error when user is not authorised", async () => {
@@ -54,24 +78,25 @@ describe("queries", () => {
         });
 
         it("returns all users with no posts", async () => {
+            //TODO: test fails sometimes because of incorrect order
             await expect(userQuery()).resolves.toMatchObject({
                 errors: undefined,
                 data: {
                     users: [
-                        { id: db.users[0].id, name: "Jonas", email: "jonas@jonas.com", posts: [] },
-                        { id: db.users[1].id, name: "Paula", email: "", posts: [] },
+                        { id: jonasId, name: "Jonas", email: "jonas@jonas.com", posts: [] },
+                        { id: paulaId, name: "Paula", email: "", posts: [] },
                     ],
                 },
             });
         });
         it("only returns email of logged in user", async () => {
-            userId = db.users[1].id;
+            userId = paulaId;
             await expect(userQuery()).resolves.toMatchObject({
                 errors: undefined,
                 data: {
                     users: [
-                        { id: db.users[0].id, name: "Jonas", email: "", posts: [] },
-                        { id: db.users[1].id, name: "Paula", email: "paula@paula.com", posts: [] },
+                        { id: jonasId, name: "Jonas", email: "", posts: [] },
+                        { id: paulaId, name: "Paula", email: "paula@paula.com", posts: [] },
                     ],
                 },
             });
@@ -104,34 +129,6 @@ describe("queries", () => {
                 });
             });
         });
-        describe("DELETE_POST", () => {
-            const DELETE_POST = gql`
-                mutation($id: ID!) {
-                    delete(id: $id) {
-                        author {
-                            name
-                            posts {
-                                title
-                            }
-                        }
-                    }
-                }
-            `;
-            const deletePostAction = (postId) =>
-                mutate({
-                    mutation: DELETE_POST,
-                    variables: { id: postId },
-                });
-            it("removes post from user", async () => {
-                db.posts = [new Post("Some post", userId)];
-                await expect(deletePostAction(db.posts[0].id)).resolves.toMatchObject({
-                    errors: undefined,
-                    data: {
-                        delete: { author: { name: "Jonas", posts: [] } },
-                    },
-                });
-            });
-        });
     });
 });
 
@@ -155,21 +152,26 @@ describe("mutations", () => {
         });
 
         it("adds a user to db.users", async () => {
-            expect(db.users).toHaveLength(0);
+            let { records } = await driver
+                .session()
+                .readTransaction((tx) => tx.run("MATCH (u:User {name: $name}) RETURN u", { name: "Jonas" }));
+            expect(records).toHaveLength(0);
             await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
-            expect(db.users).toHaveLength(1);
+            ({ records } = await driver
+                .session()
+                .readTransaction((tx) => tx.run("MATCH (u:User {name: $name}) RETURN u", { name: "Jonas" })));
+            expect(records).toHaveLength(1);
         });
-        it("calls db.createUser", async () => {
-            db.createUser = jest.fn(() => {});
-            await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
-            expect(db.createUser).toHaveBeenCalledWith("Jonas", "jonas@jonas.com", "Jonas1234");
-        });
+
         it("responds with user id", async () => {
             const { errors, data } = await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
-            const userId = db.users[0].id;
-            expect(data).toMatchObject({ signup: userId });
+            let { records } = await driver
+                .session()
+                .readTransaction((tx) => tx.run("MATCH (u:User {name: $name}) RETURN u", { name: "Jonas" }));
+            expect(data).toMatchObject({ signup: records[0]._fields[0].properties.id });
             expect(errors).toBe(undefined);
         });
+
         it("throws error if user with email already exists", async () => {
             await signupAction("Jonas", "jonas@jonas.com", "Jonas1234");
             await expect(signupAction("Jonas", "jonas@jonas.com", "Jonas1234")).resolves.toMatchObject({
@@ -191,7 +193,7 @@ describe("mutations", () => {
             mutate({ mutation: LOGIN, variables: { email: email, password: password } });
 
         beforeEach(async () => {
-            await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+            await createUser("Jonas", "jonas@jonas.com", "Jonas1234");
         });
 
         it("throws error if there is no user with this email", async () => {
@@ -202,6 +204,7 @@ describe("mutations", () => {
                 errors: [expect.objectContaining({ message: "No user with this email" })],
             });
         });
+
         it("throws error if the password is incorrect", async () => {
             await expect(loginAction("jonas@jonas.com", "wrongPassword")).resolves.toMatchObject({
                 data: {

@@ -34,7 +34,7 @@ const resolvers = ({ subschema }) => ({
             const session = driver.session();
             const { records: userRecords } = await session.readTransaction((tx) =>
                 tx
-                    .run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email })
+                    .run("MATCH (u:User) WHERE u.email = $email RETURN u", { email: email })
                     .catch((err) => console.log(err))
             );
             if (userRecords.length > 0) {
@@ -44,7 +44,7 @@ const resolvers = ({ subschema }) => ({
             await session
                 .writeTransaction((tx) =>
                     tx.run(
-                        "CREATE (a:User {name: $name, email: $email, id: $id, password: $password}) RETURN a",
+                        "CREATE (u:User {name: $name, email: $email, id: $id, password: $password}) RETURN u",
                         newUser
                     )
                 )
@@ -58,7 +58,7 @@ const resolvers = ({ subschema }) => ({
 
             const session = driver.session();
             const { records: userRecords } = await session
-                .readTransaction((tx) => tx.run("MATCH (n:User) WHERE n.email = $email RETURN n", { email: email }))
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.email = $email RETURN u", { email: email }))
                 .catch((err) => console.log(err))
                 .finally(() => session.close());
             if (userRecords.length === 0) {

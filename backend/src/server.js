@@ -11,9 +11,6 @@ const customResolvers = resolvers({ subschema: neo4jSchema });
 
 const stitchedSchema = stitchSchemas({
     subschemas: [neo4jSchema],
-    // if you want to expose neo4j-graphql-js auto-generated resolvers only in
-    // development, you could do:
-    // subschemas: (process.env.NODE_ENV === 'development' ? [neo4jSchema] : []),
     resolvers: customResolvers,
     typeDefs,
 });

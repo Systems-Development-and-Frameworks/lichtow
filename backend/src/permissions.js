@@ -12,7 +12,6 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, conte
             .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
             .catch((err) => console.log(err))
             .finally(() => session.close());
-
         if (userRecords.length === 0) {
             return new UserInputError("Invalid user", { invalidArgs: context.userId });
         }

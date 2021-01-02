@@ -1,4 +1,3 @@
-
 name: CI Backend
 
 # Controls when the action will run. Triggers the workflow on push or pull request
@@ -6,26 +5,38 @@ name: CI Backend
 on: [push, pull_request]
 
 defaults:
-  run:
-    working-directory: ./backend
+    run:
+        working-directory: ./backend
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [14.x]
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Uses Node.js ${{ matrix.node-version}}
-        uses: actions/setup-node@v1
-        with: 
-          node-version: ${{ matrix.node-version }}
-      - name: Install
-        run: npm install
-      - name: Run lint
-        run: npm run lint
-      - name: Run tests
-        run: npm run test
+        services:
+            neo4j:
+                image: neo4j
+                ports: -7687:7687
+                options: --publish=7474:7474
+                    --publish=7687:7687
+                env:
+                    NEO4JLABS_PLUGINS: ["apoc"]
+                    NEO4J_AUTH: none
+
+        strategy:
+            matrix:
+                node-version: [14.x]
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v1
+              with:
+                  node-version: ${{ matrix.node-version }}
+            - name: Install
+              run: npm install
+            - name: Run lint
+              run: npm run lint
+            - name: Run tests
+              run: npm run test
+              env:
+                  NEO4J_USERNAME: neo4j
+                  NEO4J_PASSWORD: neo4j

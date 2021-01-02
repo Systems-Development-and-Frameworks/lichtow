@@ -4,7 +4,7 @@ import neo4j from "neo4j-driver";
 
 export const driver = neo4j.driver(
     "neo4j://localhost:7687",
-    neo4j.auth.basic(process.env.NEO4J_USER, process.env.NEO4J_PASSWORD)
+    neo4j.auth.basic(process.env.NEO4J_USERNAME, process.env.NEO4J_PASSWORD)
 );
 
 const typeDefs = gql`

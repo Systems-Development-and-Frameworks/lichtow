@@ -17,8 +17,6 @@ jobs:
                 image: neo4j
                 ports: 
                     - 7687:7687
-                options: --publish=7474:7474
-                    --publish=7687:7687
                 env:
                     NEO4JLABS_PLUGINS: '["apoc"]'
                     NEO4J_AUTH: none

@@ -13,3 +13,5 @@ webapp/npm-debug.log*
 .DS_Store
 .AppleDouble
 .LSOverride
+
+git-crypt-key

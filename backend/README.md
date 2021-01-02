@@ -6,7 +6,13 @@
 npm install
 ```
 
-### Compiles and hot-reloads for development
+Create a `.env` file in this directory.
+
+```
+JWT_SECRET=<Your Secret>
+```
+
+### Run the server
 
 ```
 npm run serve

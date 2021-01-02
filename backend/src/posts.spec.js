@@ -4,12 +4,18 @@ import Server from "./server";
 import { InMemoryDataSource, User, Post } from "./datasource";
 
 let db;
-beforeEach(() => {
+let userId;
+beforeEach(async () => {
     db = new InMemoryDataSource();
-    db.users.push(new User("Jonas"));
+    await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+    userId = db.users[0].id;
 });
 
-const server = new Server({ dataSources: () => ({ db }) });
+const context = () => {
+    return { userId };
+};
+
+const server = new Server({ dataSources: () => ({ db }), context });
 
 const { query, mutate } = createTestClient(server);
 
@@ -27,20 +33,30 @@ describe("queries", () => {
                 }
             }
         `;
+
+        let postQuery = () => query({ query: POSTS });
+
+        it("throws error when user is not authorised", async () => {
+            userId = null;
+            await expect(postQuery()).resolves.toMatchObject({
+                data: {
+                    posts: null,
+                },
+                errors: [expect.objectContaining({ message: "Not Authorised!" })],
+            });
+        });
+
         it("returns empty array", async () => {
-            await expect(query({ query: POSTS })).resolves.toMatchObject({
+            await expect(postQuery()).resolves.toMatchObject({
                 errors: undefined,
                 data: { posts: [] },
             });
         });
 
         describe("given posts in the database", () => {
-            beforeEach(() => {
-                db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
-            });
-
             it("returns posts", async () => {
-                await expect(query({ query: POSTS })).resolves.toMatchObject({
+                db.posts = [new Post("Some post", userId)];
+                await expect(postQuery()).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         posts: [{ id: expect.any(String), title: "Some post", votes: 0, author: { name: "Jonas" } }],
@@ -61,52 +77,69 @@ describe("mutations", () => {
                     votes
                     author {
                         name
+                        id
                     }
                 }
             }
         `;
-        const action = () =>
-            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "Jonas" } } } });
-        const invalidUser = () =>
-            mutate({ mutation: WRITE_POST, variables: { post: { title: "Some post", author: { name: "INVALID" } } } });
+        const writePostAction = (title) => mutate({ mutation: WRITE_POST, variables: { post: { title: title } } });
 
         it("throws error when user is invalid", async () => {
-            const {
-                errors: [error],
-            } = await invalidUser();
-            expect(error.message).toEqual("Invalid user");
+            userId = "INVALID";
+            await expect(writePostAction("Some post")).resolves.toMatchObject({
+                data: {
+                    write: null,
+                },
+                errors: [expect.objectContaining({ message: "Invalid user" })],
+            });
+        });
+
+        it("throws error when user is not authorised", async () => {
+            userId = null;
+            await expect(writePostAction("Some post")).resolves.toMatchObject({
+                data: {
+                    write: null,
+                },
+                errors: [expect.objectContaining({ message: "Not Authorised!" })],
+            });
         });
 
         it("adds a post to db.posts", async () => {
             expect(db.posts).toHaveLength(0);
-            await action();
+            await writePostAction("Some post");
             expect(db.posts).toHaveLength(1);
         });
 
         it("calls db.createPost", async () => {
             db.createPost = jest.fn(() => {});
-            await action();
-            expect(db.createPost).toHaveBeenCalledWith({ title: "Some post", authorName: "Jonas" });
+            await writePostAction("Some post");
+            expect(db.createPost).toHaveBeenCalledWith("Some post", userId);
         });
 
         it("responds with created post", async () => {
-            await expect(action()).resolves.toMatchObject({
+            await expect(writePostAction("Some post")).resolves.toMatchObject({
                 errors: undefined,
-                data: { write: { title: "Some post", id: expect.any(String), votes: 0, author: { name: "Jonas" } } },
+                data: {
+                    write: {
+                        title: "Some post",
+                        id: expect.any(String),
+                        votes: 0,
+                        author: { name: "Jonas", id: userId },
+                    },
+                },
             });
         });
     });
-
     describe("VOTE_POST", () => {
         let postId;
         beforeEach(() => {
-            db.posts = [new Post({ title: "Some post", authorName: "Jonas" })];
+            db.posts = [new Post("Some post", userId)];
             postId = db.posts[0].id;
         });
         describe("UPVOTE_POST", () => {
             const UPVOTE_POST = gql`
-                mutation($id: ID!, $voter: UserInput!) {
-                    upvote(id: $id, voter: $voter) {
+                mutation($id: ID!) {
+                    upvote(id: $id) {
                         title
                         id
                         author {
@@ -116,42 +149,55 @@ describe("mutations", () => {
                     }
                 }
             `;
-            const upvote = () => mutate({ mutation: UPVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
+            const upvoteAction = (id) => mutate({ mutation: UPVOTE_POST, variables: { id: id } });
 
             it("calls db.upvotePost", async () => {
                 db.upvotePost = jest.fn(() => {});
-                await upvote();
-                expect(db.upvotePost).toHaveBeenCalledWith(postId, "Jonas");
+                await upvoteAction(postId);
+                expect(db.upvotePost).toHaveBeenCalledWith(postId, userId);
             });
 
-            it("throws error when post id invalid", async () => {
-                const invalidId = () =>
-                    mutate({ mutation: UPVOTE_POST, variables: { id: 123, voter: { name: "Jonas" } } });
-                const {
-                    errors: [error],
-                } = await invalidId();
-                expect(error.message).toEqual("Invalid post");
+            it("throws error when post id is invalid", async () => {
+                await expect(upvoteAction("INVALID")).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid post" })],
+                });
             });
+
             it("throws error when user is invalid", async () => {
-                const invalidUser = () =>
-                    mutate({ mutation: UPVOTE_POST, variables: { id: postId, voter: { name: "INVALID" } } });
-                const {
-                    errors: [error],
-                } = await invalidUser();
-                expect(error.message).toEqual("Invalid user");
+                userId = "INVALID";
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid user" })],
+                });
+            });
+
+            it("throws error when user is not authorised", async () => {
+                userId = null;
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        upvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Not Authorised!" })],
+                });
             });
 
             it("upvotes post", async () => {
-                await expect(upvote()).resolves.toMatchObject({
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
                     },
                 });
             });
+
             it("does not upvote post again when already upvoted by same user", async () => {
-                await upvote();
-                await expect(upvote()).resolves.toMatchObject({
+                await upvoteAction(postId);
+                await expect(upvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         upvote: { title: "Some post", id: postId, votes: 1, author: { name: "Jonas" } },
@@ -161,8 +207,8 @@ describe("mutations", () => {
         });
         describe("DOWNVOTE_POST", () => {
             const DOWNVOTE_POST = gql`
-                mutation($id: ID!, $voter: UserInput!) {
-                    downvote(id: $id, voter: $voter) {
+                mutation($id: ID!) {
+                    downvote(id: $id) {
                         title
                         id
                         author {
@@ -172,43 +218,55 @@ describe("mutations", () => {
                     }
                 }
             `;
-            const downvote = () =>
-                mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "Jonas" } } });
+            const downvoteAction = (id) => mutate({ mutation: DOWNVOTE_POST, variables: { id: id } });
 
             it("calls db.downvotePost", async () => {
                 db.downvotePost = jest.fn(() => {});
-                await downvote();
-                expect(db.downvotePost).toHaveBeenCalledWith(postId, "Jonas");
+                await downvoteAction(postId);
+                expect(db.downvotePost).toHaveBeenCalledWith(postId, userId);
             });
 
-            it("throws error when post id invalid", async () => {
-                const invalidId = () =>
-                    mutate({ mutation: DOWNVOTE_POST, variables: { id: 123, voter: { name: "Jonas" } } });
-                const {
-                    errors: [error],
-                } = await invalidId();
-                expect(error.message).toEqual("Invalid post");
+            it("throws error when post id is invalid", async () => {
+                await expect(downvoteAction("INVALID")).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid post" })],
+                });
             });
+
             it("throws error when user is invalid", async () => {
-                const invalidUser = () =>
-                    mutate({ mutation: DOWNVOTE_POST, variables: { id: postId, voter: { name: "INVALID" } } });
-                const {
-                    errors: [error],
-                } = await invalidUser();
-                expect(error.message).toEqual("Invalid user");
+                userId = "INVALID";
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Invalid user" })],
+                });
             });
 
-            it("dowvotes post", async () => {
-                await expect(downvote()).resolves.toMatchObject({
+            it("throws error when user is not authorised", async () => {
+                userId = null;
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
+                    data: {
+                        downvote: null,
+                    },
+                    errors: [expect.objectContaining({ message: "Not Authorised!" })],
+                });
+            });
+
+            it("downvotes post", async () => {
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
                     },
                 });
             });
+
             it("does not downvote post again when already downvoted by same user", async () => {
-                await downvote();
-                await expect(downvote()).resolves.toMatchObject({
+                await downvoteAction(postId);
+                await expect(downvoteAction(postId)).resolves.toMatchObject({
                     errors: undefined,
                     data: {
                         downvote: { title: "Some post", id: postId, votes: -1, author: { name: "Jonas" } },
@@ -219,11 +277,11 @@ describe("mutations", () => {
     });
     describe("DELETE_POST", () => {
         let postId;
-        beforeEach(() => {
-            db.posts = [
-                new Post({ title: "Some post", authorName: "Jonas" }),
-                new Post({ title: "Some other post", authorName: "Jonas" }),
-            ];
+        let otherUserId;
+        beforeEach(async () => {
+            await db.createUser("Paula", "paula@paula.com", "Paula1234");
+            otherUserId = db.users[1].id;
+            db.posts = [new Post("Some post", userId), new Post("Some other post", otherUserId)];
             postId = db.posts[0].id;
         });
         const DELETE_POST = gql`
@@ -238,36 +296,47 @@ describe("mutations", () => {
                 }
             }
         `;
-        const deletePost = () => mutate({ mutation: DELETE_POST, variables: { id: postId } });
+        const deletePostAction = (id) => mutate({ mutation: DELETE_POST, variables: { id: id } });
 
         it("calls db.deletePost", async () => {
             db.deletePost = jest.fn(() => {});
-            await deletePost();
+            await deletePostAction(postId);
             expect(db.deletePost).toHaveBeenCalledWith(postId);
         });
 
         it("throws error when post id invalid", async () => {
-            const invalidId = () => mutate({ mutation: DELETE_POST, variables: { id: 123 } });
-            const {
-                errors: [error],
-            } = await invalidId();
-            expect(error.message).toEqual("Invalid post");
+            await expect(deletePostAction("INVALID")).resolves.toMatchObject({
+                data: {
+                    delete: null,
+                },
+                errors: [expect.objectContaining({ message: "Invalid post" })],
+            });
+        });
+
+        it("throws error if user is not the author of the post", async () => {
+            await expect(deletePostAction(db.posts[1].id)).resolves.toMatchObject({
+                data: {
+                    delete: null,
+                },
+                errors: [expect.objectContaining({ message: "Only authors are allowed to delete posts" })],
+            });
         });
 
         it("removes a post from db.posts", async () => {
             expect(db.posts).toHaveLength(2);
-            await deletePost();
+            await deletePostAction(postId);
             expect(db.posts).toHaveLength(1);
         });
+
         it("does not remove same post twice from db.posts", async () => {
             expect(db.posts).toHaveLength(2);
-            await deletePost();
-            await deletePost();
+            await deletePostAction(postId);
+            await deletePostAction(postId);
             expect(db.posts).toHaveLength(1);
         });
 
         it("returns post that is deleted", async () => {
-            await expect(deletePost()).resolves.toMatchObject({
+            await expect(deletePostAction(postId)).resolves.toMatchObject({
                 errors: undefined,
                 data: {
                     delete: { title: "Some post", id: postId, votes: 0, author: { name: "Jonas" } },

@@ -1,60 +1,92 @@
-const { UserInputError } = require("apollo-server");
+import { UserInputError } from "apollo-server";
+import bcrypt from "bcrypt";
 
 const resolvers = {
     Query: {
-        users: (parent, args, context) => context.dataSources.db.allUsers(),
-        posts: (parent, args, context) => context.dataSources.db.allPosts(),
+        users: (_, args, context) => context.dataSources.db.allUsers(),
+        posts: (_, args, context) => context.dataSources.db.allPosts(),
     },
     Mutation: {
-        write: async (parent, args, context) => {
-            const newPost = {
-                title: args.post.title,
-                authorName: args.post.author.name,
-            };
-            const author = await context.dataSources.db.getUser(newPost.authorName);
-            if (!author) {
-                throw new UserInputError("Invalid user", { invalidArgs: newPost.authorName });
+        signup: async (_, args, { dataSources }) => {
+            const name = args.name;
+            const email = args.email;
+            const password = args.password;
+            if (password.length < 9) {
+                throw new UserInputError("Password is too short", { invalidArgs: password });
             }
-            return await context.dataSources.db.createPost(newPost);
+            const users = await dataSources.db.allUsers();
+            if (users.find((user) => user.email === email)) {
+                throw new UserInputError("User with this email already exists", { invalidArgs: email });
+            }
+            const newUser = await dataSources.db.createUser(name, email, password);
+            return newUser.id;
         },
-        delete: async (parent, args, context) => {
-            const id = args.id;
-            const post = await context.dataSources.db.getPost(id);
-            if (!post) {
-                throw new UserInputError("Invalid post", { invalidArgs: id });
+        login: async (_, args, { dataSources, jwt }) => {
+            const email = args.email;
+            const password = args.password;
+            const user = await dataSources.db.getUserByEmail(email);
+            if (!user) {
+                throw new UserInputError("No user with this email", { invalidArgs: email });
             }
-            return await context.dataSources.db.deletePost(id);
+            const isCorrectPassword = await bcrypt.compare(password, user.password);
+            if (!isCorrectPassword) {
+                throw new UserInputError("Password is incorrect");
+            }
+            let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+            return token;
         },
-        upvote: async (parent, args, context) => {
-            const name = args.voter.name;
-            const id = args.id;
-            const upvoter = await context.dataSources.db.getUser(name);
-            if (!upvoter) {
-                throw new UserInputError("Invalid user", { invalidArgs: name });
+        write: async (_, args, { dataSources, userId }) => {
+            const title = args.post.title;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
             }
-            const post = await context.dataSources.db.getPost(id);
-            if (!post) {
-                throw new UserInputError("Invalid post", { invalidArgs: id });
-            }
-            return await context.dataSources.db.upvotePost(id, name);
+            return await dataSources.db.createPost(title, userId);
         },
-        downvote: async (parent, args, context) => {
-            const name = args.voter.name;
-            const id = args.id;
-            const downvoter = await context.dataSources.db.getUser(name);
-            if (!downvoter) {
-                throw new UserInputError("Invalid user", { invalidArgs: name });
+        upvote: async (_, args, { dataSources, userId }) => {
+            const postId = args.id;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
             }
-            const post = await context.dataSources.db.getPost(id);
+            const post = await dataSources.db.getPost(postId);
             if (!post) {
-                throw new UserInputError("Invalid post", { invalidArgs: id });
+                throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            return await context.dataSources.db.downvotePost(id, name);
+            return await dataSources.db.upvotePost(postId, userId);
+        },
+        downvote: async (_, args, { dataSources, userId }) => {
+            const postId = args.id;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            }
+            const post = await dataSources.db.getPost(postId);
+            if (!post) {
+                throw new UserInputError("Invalid post", { invalidArgs: postId });
+            }
+            return await dataSources.db.downvotePost(postId, userId);
+        },
+
+        delete: async (_, args, { dataSources, userId }) => {
+            const postId = args.id;
+            const user = await dataSources.db.getUser(userId);
+            if (!user) {
+                throw new UserInputError("Invalid user", { invalidArgs: userId });
+            }
+            const post = await dataSources.db.getPost(postId);
+            if (!post) {
+                throw new UserInputError("Invalid post", { invalidArgs: postId });
+            }
+            if (post.authorId !== userId) {
+                throw new UserInputError("Only authors are allowed to delete posts");
+            }
+            return await dataSources.db.deletePost(postId);
         },
     },
     Post: {
-        author: async (obj, args, context) => {
-            return await context.dataSources.db.getUser(obj.authorName);
+        author: async (obj, args, { dataSources }) => {
+            return await dataSources.db.getUser(obj.authorId);
         },
         votes: async (obj, args, context) => {
             let values = Array.from(obj.voters.values());
@@ -63,9 +95,12 @@ const resolvers = {
         },
     },
     User: {
-        posts: async (obj, args, context) => {
-            const allPosts = await context.dataSources.db.allPosts();
-            return allPosts.filter((post) => post.authorName === obj.name);
+        posts: async (obj, args, { dataSources }) => {
+            const allPosts = await dataSources.db.allPosts();
+            return allPosts.filter((post) => post.authorId === obj.id);
+        },
+        email: (obj, args, { userId }) => {
+            return obj.id === userId ? obj.email : "";
         },
     },
 };

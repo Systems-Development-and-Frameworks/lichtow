@@ -10,7 +10,7 @@ Create a `.env` file in this directory.
 
 ```
 JWT_SECRET=<Your Secret>
-process.env.NEO4J_USER=<Neo4J User>
+process.env.NEO4J_USERNAME=<Neo4J Username>
 process.env.NEO4J_PASSWORD=<Neo4J Password>
 ```
 

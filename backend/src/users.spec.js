@@ -77,18 +77,18 @@ describe("queries", () => {
             });
         });
 
-        // it("returns all users with no posts", async () => {
-        //     //TODO: test fails sometimes because of incorrect order
-        //     await expect(userQuery()).resolves.toMatchObject({
-        //         errors: undefined,
-        //         data: {
-        //             users: [
-        //                 { id: jonasId, name: "Jonas", email: "jonas@jonas.com", posts: [] },
-        //                 { id: paulaId, name: "Paula", email: "", posts: [] },
-        //             ],
-        //         },
-        //     });
-        // });
+        it("returns all users with no posts", async () => {
+            await expect(userQuery()).resolves.toMatchObject({
+                errors: undefined,
+                data: {
+                    users: expect.arrayContaining([
+                        { id: jonasId, name: "Jonas", email: "jonas@jonas.com", posts: [] },
+                        { id: paulaId, name: "Paula", email: "", posts: [] },
+                    ]),
+                },
+            });
+        });
+
         it("only returns email of logged in user", async () => {
             userId = paulaId;
             await expect(userQuery()).resolves.toMatchObject({

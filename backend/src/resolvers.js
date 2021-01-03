@@ -64,7 +64,7 @@ const resolvers = ({ subschema }) => ({
             if (userRecords.length === 0) {
                 throw new UserInputError("No user with this email", { invalidArgs: email });
             }
-            const user = userRecords[0]._fields[0].properties; //TODO: check if there is a better way to access the node
+            const user = userRecords[0]._fields[0].properties;
             const isCorrectPassword = await bcrypt.compare(password, user.password);
             if (!isCorrectPassword) {
                 throw new UserInputError("Password is incorrect");

@@ -1,5 +1,9 @@
 # Backend
 
+## Reasons for using Neo4J to solve exercise 5
+We could choose between two scenarios regarding exercise 5. The first scenario was to use a remote GraphQL Api and a headless CMS in order to avoid to host a local database. The second scenario was to setup a database for Neo4J locally, either on the own host machine or with a docker.
+We decided to implement the second scenario and to use a docker for educational reasons since we were eager to learn more about Neo4J and docker architectures. Especially, we were interested in the topics concerning schema stitching and schema delegation with Neo4J.
+
 ## Project setup
 
 ```

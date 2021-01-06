@@ -20,7 +20,7 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, conte
     return false;
 });
 
-const isEmailOwner = rule({ cahce: "contextual" })(async (parent, args, context) => {
+const isEmailOwner = rule({ cache: "contextual" })(async (parent, args, context) => {
     if (parent.id !== context.userId) {
         parent.email = "";
     }

@@ -1,4 +1,4 @@
-import { ApolloServer, gql } from "apollo-server";
+import { ApolloServer } from "apollo-server";
 import { applyMiddleware } from "graphql-middleware";
 import jwt from "jsonwebtoken";
 import { stitchSchemas } from "@graphql-tools/stitch";

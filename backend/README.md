@@ -14,8 +14,8 @@ Create a `.env` file in this directory.
 
 ```
 JWT_SECRET=<Your Secret>
-process.env.NEO4J_USERNAME=<Neo4J Username>
-process.env.NEO4J_PASSWORD=<Neo4J Password>
+NEO4J_USERNAME=<Neo4J Username>
+NEO4J_PASSWORD=<Neo4J Password>
 ```
 
 ### Run the server

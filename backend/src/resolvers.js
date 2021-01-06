@@ -160,6 +160,11 @@ const resolvers = ({ subschema }) => ({
             });
         },
     },
+    User: {
+        email: (obj, _, { userId }) => {
+            return obj.id === userId ? obj.email : "";
+        },
+    },
 });
 
 export default resolvers;

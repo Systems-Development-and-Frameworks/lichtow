@@ -20,13 +20,6 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, conte
     return false;
 });
 
-const isEmailOwner = rule({ cache: "contextual" })(async (parent, args, context) => {
-    if (parent.id !== context.userId) {
-        parent.email = "";
-    }
-    return true;
-});
-
 export const permissions = shield(
     {
         Query: {
@@ -42,9 +35,6 @@ export const permissions = shield(
             upvote: isAuthenticated,
             downvote: isAuthenticated,
             delete: isAuthenticated,
-        },
-        User: {
-            email: isEmailOwner,
         },
     },
     {

@@ -32,7 +32,7 @@ run the backend
 npm run serve
 ```
 
-### Lints files
+### Lint files
 
 ```
 npm run lint

@@ -9,7 +9,7 @@ const isAuthenticated = rule({ cache: "contextual" })(async (parent, args, conte
     if (context.userId !== null) {
         const session = context.driver.session();
         const { records: userRecords } = await session
-            .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId }))
+            .run("MATCH (u:User) WHERE u.id = $id RETURN u", { id: context.userId })
             .catch((err) => console.log(err))
             .finally(() => session.close());
         if (userRecords.length === 0) {

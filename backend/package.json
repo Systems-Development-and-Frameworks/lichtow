@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "nodemon -r esm src/index.js",
     "lint": "eslint --ext .js",
-    "test": "jest --verbose --runInBand",
+    "test": "jest --verbose --runInBand --colors",
     "db:seed": "node -r esm src/db/seed.js",
     "db:clean": "node -r esm src/db/clean.js"
   },

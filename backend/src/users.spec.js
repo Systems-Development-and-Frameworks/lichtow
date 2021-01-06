@@ -94,10 +94,10 @@ describe("queries", () => {
             await expect(userQuery()).resolves.toMatchObject({
                 errors: undefined,
                 data: {
-                    users: [
+                    users: expect.arrayContaining([
                         { id: jonasId, name: "Jonas", email: "", posts: [] },
                         { id: paulaId, name: "Paula", email: "paula@paula.com", posts: [] },
-                    ],
+                    ]),
                 },
             });
         });

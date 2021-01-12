@@ -32,6 +32,12 @@ run the backend
 npm run serve
 ```
 
+### Run tests
+
+```
+npm run test
+```
+
 ### Lint files
 
 ```

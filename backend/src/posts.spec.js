@@ -1,23 +1,58 @@
 import { gql } from "apollo-server";
 import { createTestClient } from "apollo-server-testing";
 import Server from "./server";
-import { InMemoryDataSource, User, Post } from "./datasource";
+import User from "./user";
+import Post from "./post";
+import { driver } from "./db/neo4jSchema";
 
-let db;
+let jwt;
 let userId;
+let query;
+let mutate;
+
+const cleanDatabase = async () => {
+    await driver.session().writeTransaction((tx) => tx.run("MATCH(n) DETACH DELETE n"));
+};
+
 beforeEach(async () => {
-    db = new InMemoryDataSource();
-    await db.createUser("Jonas", "jonas@jonas.com", "Jonas1234");
-    userId = db.users[0].id;
+    await cleanDatabase();
+    userId = null;
+    jwt = null;
+    const server = new Server({ context });
+    const testClient = createTestClient(server);
+    ({ query, mutate } = testClient);
+    userId = await createUser("Jonas", "jonas@jonas.com", "Jonas1234");
+});
+
+afterAll(async () => {
+    await cleanDatabase();
+    driver.close();
 });
 
 const context = () => {
-    return { userId };
+    return { userId, jwt, driver };
 };
 
-const server = new Server({ dataSources: () => ({ db }), context });
+const createUser = async (name, email, password) => {
+    const newUser = await User.build(name, email, password);
+    await driver
+        .session()
+        .writeTransaction((tx) =>
+            tx.run("CREATE (u:User {name: $name, email: $email, id: $id, password: $password}) RETURN u", newUser)
+        );
+    return newUser.id;
+};
 
-const { query, mutate } = createTestClient(server);
+const createPost = async (title, userId) => {
+    const newPost = new Post(title);
+    await driver.session().writeTransaction((tx) =>
+        tx.run("MATCH (u:User {id:$userId}) CREATE (u)-[:WROTE]->(p:Post {id: $id, title: $title }) RETURN p", {
+            userId,
+            ...newPost,
+        })
+    );
+    return newPost.id;
+};
 
 describe("queries", () => {
     describe("POSTS", () => {
@@ -55,7 +90,7 @@ describe("queries", () => {
 
         describe("given posts in the database", () => {
             it("returns posts", async () => {
-                db.posts = [new Post("Some post", userId)];
+                await createPost("Some post", userId);
                 await expect(postQuery()).resolves.toMatchObject({
                     errors: undefined,
                     data: {
@@ -104,16 +139,12 @@ describe("mutations", () => {
             });
         });
 
-        it("adds a post to db.posts", async () => {
-            expect(db.posts).toHaveLength(0);
+        it("adds a post to database", async () => {
+            let { records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p"));
+            expect(records).toHaveLength(0);
             await writePostAction("Some post");
-            expect(db.posts).toHaveLength(1);
-        });
-
-        it("calls db.createPost", async () => {
-            db.createPost = jest.fn(() => {});
-            await writePostAction("Some post");
-            expect(db.createPost).toHaveBeenCalledWith("Some post", userId);
+            ({ records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p")));
+            expect(records).toHaveLength(1);
         });
 
         it("responds with created post", async () => {
@@ -132,9 +163,8 @@ describe("mutations", () => {
     });
     describe("VOTE_POST", () => {
         let postId;
-        beforeEach(() => {
-            db.posts = [new Post("Some post", userId)];
-            postId = db.posts[0].id;
+        beforeEach(async () => {
+            postId = await createPost("Some post", userId);
         });
         describe("UPVOTE_POST", () => {
             const UPVOTE_POST = gql`
@@ -150,12 +180,6 @@ describe("mutations", () => {
                 }
             `;
             const upvoteAction = (id) => mutate({ mutation: UPVOTE_POST, variables: { id: id } });
-
-            it("calls db.upvotePost", async () => {
-                db.upvotePost = jest.fn(() => {});
-                await upvoteAction(postId);
-                expect(db.upvotePost).toHaveBeenCalledWith(postId, userId);
-            });
 
             it("throws error when post id is invalid", async () => {
                 await expect(upvoteAction("INVALID")).resolves.toMatchObject({
@@ -220,12 +244,6 @@ describe("mutations", () => {
             `;
             const downvoteAction = (id) => mutate({ mutation: DOWNVOTE_POST, variables: { id: id } });
 
-            it("calls db.downvotePost", async () => {
-                db.downvotePost = jest.fn(() => {});
-                await downvoteAction(postId);
-                expect(db.downvotePost).toHaveBeenCalledWith(postId, userId);
-            });
-
             it("throws error when post id is invalid", async () => {
                 await expect(downvoteAction("INVALID")).resolves.toMatchObject({
                     data: {
@@ -278,11 +296,11 @@ describe("mutations", () => {
     describe("DELETE_POST", () => {
         let postId;
         let otherUserId;
+        let otherPostId;
         beforeEach(async () => {
-            await db.createUser("Paula", "paula@paula.com", "Paula1234");
-            otherUserId = db.users[1].id;
-            db.posts = [new Post("Some post", userId), new Post("Some other post", otherUserId)];
-            postId = db.posts[0].id;
+            otherUserId = await createUser("Paula", "paula@paula.com", "Paula1234");
+            postId = await createPost("Some post", userId);
+            otherPostId = await createPost("Some other post", otherUserId);
         });
         const DELETE_POST = gql`
             mutation($id: ID!) {
@@ -298,12 +316,6 @@ describe("mutations", () => {
         `;
         const deletePostAction = (id) => mutate({ mutation: DELETE_POST, variables: { id: id } });
 
-        it("calls db.deletePost", async () => {
-            db.deletePost = jest.fn(() => {});
-            await deletePostAction(postId);
-            expect(db.deletePost).toHaveBeenCalledWith(postId);
-        });
-
         it("throws error when post id invalid", async () => {
             await expect(deletePostAction("INVALID")).resolves.toMatchObject({
                 data: {
@@ -314,7 +326,7 @@ describe("mutations", () => {
         });
 
         it("throws error if user is not the author of the post", async () => {
-            await expect(deletePostAction(db.posts[1].id)).resolves.toMatchObject({
+            await expect(deletePostAction(otherPostId)).resolves.toMatchObject({
                 data: {
                     delete: null,
                 },
@@ -322,17 +334,21 @@ describe("mutations", () => {
             });
         });
 
-        it("removes a post from db.posts", async () => {
-            expect(db.posts).toHaveLength(2);
+        it("removes a post from database", async () => {
+            let { records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p"));
+            expect(records).toHaveLength(2);
             await deletePostAction(postId);
-            expect(db.posts).toHaveLength(1);
+            ({ records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p")));
+            expect(records).toHaveLength(1);
         });
 
-        it("does not remove same post twice from db.posts", async () => {
-            expect(db.posts).toHaveLength(2);
+        it("does not remove same post twice from database", async () => {
+            let { records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p"));
+            expect(records).toHaveLength(2);
             await deletePostAction(postId);
             await deletePostAction(postId);
-            expect(db.posts).toHaveLength(1);
+            ({ records } = await driver.session().readTransaction((tx) => tx.run("MATCH (p:Post) RETURN p")));
+            expect(records).toHaveLength(1);
         });
 
         it("returns post that is deleted", async () => {

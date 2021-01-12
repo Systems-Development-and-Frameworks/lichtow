@@ -1,108 +1,170 @@
 import { UserInputError } from "apollo-server";
 import bcrypt from "bcrypt";
+import { delegateToSchema } from "@graphql-tools/delegate";
+import User from "./user";
+import Post from "./post";
 
-const resolvers = {
+const resolvers = ({ subschema }) => ({
     Query: {
-        users: (_, args, context) => context.dataSources.db.allUsers(),
-        posts: (_, args, context) => context.dataSources.db.allPosts(),
+        users: (_, __, context, info) =>
+            delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "User",
+                context,
+                info,
+            }),
+        posts: (_, __, context, info) =>
+            delegateToSchema({
+                schema: subschema,
+                operation: "query",
+                fieldName: "Post",
+                context,
+                info,
+            }),
     },
     Mutation: {
-        signup: async (_, args, { dataSources }) => {
+        signup: async (_, args, { driver }) => {
             const name = args.name;
             const email = args.email;
             const password = args.password;
-            if (password.length < 9) {
+            if (password.length < 8) {
                 throw new UserInputError("Password is too short", { invalidArgs: password });
             }
-            const users = await dataSources.db.allUsers();
-            if (users.find((user) => user.email === email)) {
+            const session = driver.session();
+            const { records: userRecords } = await session.readTransaction((tx) =>
+                tx
+                    .run("MATCH (u:User) WHERE u.email = $email RETURN u", { email: email })
+                    .catch((err) => console.log(err))
+            );
+            if (userRecords.length > 0) {
                 throw new UserInputError("User with this email already exists", { invalidArgs: email });
             }
-            const newUser = await dataSources.db.createUser(name, email, password);
+            const newUser = await User.build(name, email, password);
+            await session
+                .writeTransaction((tx) =>
+                    tx.run(
+                        "CREATE (u:User {name: $name, email: $email, id: $id, password: $password}) RETURN u",
+                        newUser
+                    )
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
             return newUser.id;
         },
-        login: async (_, args, { dataSources, jwt }) => {
+        login: async (_, args, { jwt, driver }) => {
             const email = args.email;
             const password = args.password;
-            const user = await dataSources.db.getUserByEmail(email);
-            if (!user) {
+
+            const session = driver.session();
+            const { records: userRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (u:User) WHERE u.email = $email RETURN u", { email: email }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (userRecords.length === 0) {
                 throw new UserInputError("No user with this email", { invalidArgs: email });
             }
+            const user = userRecords[0]._fields[0].properties;
             const isCorrectPassword = await bcrypt.compare(password, user.password);
             if (!isCorrectPassword) {
                 throw new UserInputError("Password is incorrect");
             }
-            let token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
             return token;
         },
-        write: async (_, args, { dataSources, userId }) => {
+        write: async (_, args, context, info) => {
             const title = args.post.title;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
-            }
-            return await dataSources.db.createPost(title, userId);
+            const post = new Post(title);
+
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "writePost",
+                args: { ...post, userId: context.userId },
+                context,
+                info,
+            });
         },
-        upvote: async (_, args, { dataSources, userId }) => {
+        upvote: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
-            }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+            const session = context.driver.session();
+
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            return await dataSources.db.upvotePost(postId, userId);
+
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "votePost",
+                args: { value: 1, postId, userId: context.userId },
+                context,
+                info,
+            });
         },
-        downvote: async (_, args, { dataSources, userId }) => {
+        downvote: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
-            }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+            const session = context.driver.session();
+
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            return await dataSources.db.downvotePost(postId, userId);
+
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "votePost",
+                args: { value: -1, postId, userId: context.userId },
+                context,
+                info,
+            });
         },
 
-        delete: async (_, args, { dataSources, userId }) => {
+        delete: async (_, args, context, info) => {
             const postId = args.id;
-            const user = await dataSources.db.getUser(userId);
-            if (!user) {
-                throw new UserInputError("Invalid user", { invalidArgs: userId });
-            }
-            const post = await dataSources.db.getPost(postId);
-            if (!post) {
+
+            let session = context.driver.session();
+            const { records: postRecords } = await session
+                .readTransaction((tx) => tx.run("MATCH (p:Post) WHERE p.id = $id RETURN p", { id: postId }))
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (postRecords.length === 0) {
                 throw new UserInputError("Invalid post", { invalidArgs: postId });
             }
-            if (post.authorId !== userId) {
+            session = context.driver.session();
+            const { records: authorRecords } = await session
+                .readTransaction((tx) =>
+                    tx.run("MATCH (u:User)-[:WROTE]->(p:Post {id: $id}) RETURN u ", { id: postId })
+                )
+                .catch((err) => console.log(err))
+                .finally(() => session.close());
+            if (authorRecords[0]._fields[0].properties.id !== context.userId) {
                 throw new UserInputError("Only authors are allowed to delete posts");
             }
-            return await dataSources.db.deletePost(postId);
-        },
-    },
-    Post: {
-        author: async (obj, args, { dataSources }) => {
-            return await dataSources.db.getUser(obj.authorId);
-        },
-        votes: async (obj, args, context) => {
-            let values = Array.from(obj.voters.values());
-            let votes = values.reduce((sum, number) => sum + number, 0);
-            return votes;
+
+            return delegateToSchema({
+                schema: subschema,
+                operation: "mutation",
+                fieldName: "DeletePost",
+                args: { id: postId },
+                context,
+                info,
+            });
         },
     },
     User: {
-        posts: async (obj, args, { dataSources }) => {
-            const allPosts = await dataSources.db.allPosts();
-            return allPosts.filter((post) => post.authorId === obj.id);
-        },
-        email: (obj, args, { userId }) => {
+        email: (obj, _, { userId }) => {
             return obj.id === userId ? obj.email : "";
         },
     },
-};
+});
 
 export default resolvers;

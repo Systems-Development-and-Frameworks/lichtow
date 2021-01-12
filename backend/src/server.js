@@ -1,33 +1,35 @@
-import { ApolloServer, gql } from "apollo-server";
+import { ApolloServer } from "apollo-server";
 import { applyMiddleware } from "graphql-middleware";
-import { makeExecutableSchema } from "graphql-tools";
 import jwt from "jsonwebtoken";
-import { InMemoryDataSource, Post, User } from "./datasource";
+import { stitchSchemas } from "@graphql-tools/stitch";
 import { permissions } from "./permissions";
 import typeDefs from "./typeDefs";
 import resolvers from "./resolvers";
+import neo4jSchema, { driver } from "./db/neo4jSchema";
 
-const db = new InMemoryDataSource();
+const customResolvers = resolvers({ subschema: neo4jSchema });
 
-const dataSources = () => ({ db });
+const stitchedSchema = stitchSchemas({
+    subschemas: [neo4jSchema],
+    resolvers: customResolvers,
+    typeDefs,
+});
 
 const context = ({ req }) => {
     try {
         const { authorization } = req.headers;
         const token = authorization.replace("Bearer ", "");
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        return { userId: payload.userId, jwt };
+        return { userId: payload.userId, jwt, driver };
     } catch (e) {
-        return { userId: null, jwt };
+        return { userId: null, jwt, driver };
     }
 };
-const schema = makeExecutableSchema({ typeDefs, resolvers });
 
 export default class Server {
     constructor(opts) {
         const defaults = {
-            schema: applyMiddleware(schema, permissions),
-            dataSources,
+            schema: applyMiddleware(stitchedSchema, permissions),
             context,
         };
         return new ApolloServer({ ...defaults, ...opts });

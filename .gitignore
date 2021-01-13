@@ -4,11 +4,6 @@
 
 webapp/dist/
 
-### Node ###
-webapp/node_modules/
-webapp/logs
-webapp/npm-debug.log*
-
 ### macOS ###
 .DS_Store
 .AppleDouble

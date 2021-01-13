@@ -1,0 +1,20 @@
+{
+  "NewsForm": {
+    "description": "Auto imported from components/NewsForm/NewsForm.vue"
+  },
+  "LazyNewsForm": {
+    "description": "Auto imported from components/NewsForm/NewsForm.vue"
+  },
+  "NewsItem": {
+    "description": "Auto imported from components/NewsItem/NewsItem.vue"
+  },
+  "LazyNewsItem": {
+    "description": "Auto imported from components/NewsItem/NewsItem.vue"
+  },
+  "NewsList": {
+    "description": "Auto imported from components/NewsList/NewsList.vue"
+  },
+  "LazyNewsList": {
+    "description": "Auto imported from components/NewsList/NewsList.vue"
+  }
+}

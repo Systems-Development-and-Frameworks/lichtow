@@ -1,0 +1,19 @@
+
+.vscode/
+*.code-workspace
+.env
+
+### Node ###
+node_modules/
+logs
+npm-debug.log*
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+
+### Storybook ###
+.nuxt-storybook
+storybook-static

@@ -1,7 +1,0 @@
-#import "./PostFragment.gql"
-
-mutation write($post: PostInput!) {
-    write(post: $post) {
-        ...Post
-    }
-}

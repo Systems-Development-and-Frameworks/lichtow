@@ -1,29 +1,20 @@
-# Project setup
+# hackernews
 
-```
-npm install
-```
+## Build Setup
 
-### Compiles and hot-reloads for development
+```bash
+# install dependencies
+$ npm install
 
-```
-npm run serve
-```
+# serve with hot reload at localhost:3000
+$ npm run dev
 
-### Compiles and minifies for production
+# build for production and launch server
+$ npm run build
+$ npm run start
 
-```
-npm run build
-```
-
-### Lints and fixes files
-
-```
-npm run lint
+# generate static project
+$ npm run generate
 ```
 
-# Tutorials used:
-
--   For Testing Vue & Apollo: https://dev.to/n_tepluhina/testing-vue-apollo-2020-edition-2l2p
-    -   Repository: https://github.com/NataliaTepluhina/vue-graphql-presentation/tree/testing-mock-client
--
+For detailed explanation on how things work, check out [Nuxt.js docs](https://nuxtjs.org).

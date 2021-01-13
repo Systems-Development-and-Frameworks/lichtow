@@ -17,3 +17,6 @@ npm-debug.log*
 ### Storybook ###
 .nuxt-storybook
 storybook-static
+
+### Nuxt.js###
+.nuxt

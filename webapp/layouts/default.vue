@@ -1,5 +1,6 @@
 <template>
   <div>
+    <NuxtLink to="/login">Login</NuxtLink>
     <Nuxt />
   </div>
 </template>

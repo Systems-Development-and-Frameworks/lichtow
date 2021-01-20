@@ -14,12 +14,12 @@ export default {
   props: ["item"],
   methods: {
     upvote: function () {
-      let item = {...this.item};
+      let item = { ...this.item };
       item.votes++;
       this.$emit("updateItem", item);
     },
     downvote: function () {
-       let item = {...this.item};
+      let item = { ...this.item };
       item.votes--;
       this.$emit("updateItem", item);
     },

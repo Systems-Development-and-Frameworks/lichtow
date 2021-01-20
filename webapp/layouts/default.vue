@@ -1,21 +1,32 @@
 <template>
   <div>
-    <NuxtLink to="/login">Login</NuxtLink>
+    <template v-if="loggedIn">
+      <button @click="logout">Logout</button>
+    </template>
+    <template v-else>
+      <NuxtLink to="/login">Login</NuxtLink>
+    </template>
     <Nuxt />
   </div>
 </template>
 
+<script>
+import { mapGetters, mapActions } from "vuex";
+
+export default {
+  computed: {
+    ...mapGetters(["loggedIn"]),
+  },
+  methods: {
+    ...mapActions(["logout"]),
+  },
+};
+</script>
+
 <style>
 html {
-  font-family:
-    'Source Sans Pro',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 16px;
   word-spacing: 1px;
   -ms-text-size-adjust: 100%;

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="isAuthenticated">You are Logged in</div>
+    <div v-if="loggedIn">You are Logged in</div>
     <form onsubmit="event.preventDefault();">
       <input
         type="email"
@@ -15,34 +15,31 @@
         placeholder="Password"
       />
       <div v-if="invalidCredentials">Falsche Email oder Passwort</div>
-      <input type="submit" aria-label="Login" value="Login" @click="login" />
+      <input type="submit" aria-label="Login" value="Login" @click="submit" />
     </form>
   </div>
 </template>
 
 <script>
-import login from "../../gql/login.gql";
+import { mapState, mapGetters, mapActions } from "vuex";
 export default {
   computed: {
-    isAuthenticated: function () {
-      return !!this.$apolloHelpers.getToken();
-    },
+    ...mapGetters(["loggedIn"]),
+    ...mapState(["currentUser"]),
   },
   methods: {
-    login: async function () {
-      await this.$apollo
-        .mutate({
-          mutation: login,
-          variables: { email: this.email, password: this.password },
-        })
-        .then(({ data }) => {
-          this.$apolloHelpers.onLogin(data.login).then(() => {
-            this.invalidCredentials = false;
-            this.isAuthenticated = true;
-          });
-          console.log("You are logged in");
-        })
-        .catch(() => (this.invalidCredentials = true));
+    ...mapActions(["login"]),
+    submit: async function () {
+      try {
+        await this.login({
+          email: this.email,
+          password: this.password,
+          apolloClient: this.$apollo,
+        });
+        this.invalidCredentials = false;
+      } catch (error) {
+        this.invalidCredentials = true;
+      }
     },
   },
   data: function () {

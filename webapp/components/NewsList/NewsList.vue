@@ -16,13 +16,17 @@
       </div>
       <button id="reverseOrder" @click="reverseOrder">Reverse order</button>
 
-      <NewsForm class="news-form" @createItem="createItem"></NewsForm>
+      <NewsForm
+        v-if="loggedIn"
+        class="news-form"
+        @createItem="createItem"
+      ></NewsForm>
     </div>
   </div>
 </template>
 
 <script>
-import { mapMutations } from "vuex";
+import { mapMutations, mapGetters } from "vuex";
 import NewsItem from "../NewsItem/NewsItem.vue";
 import NewsForm from "../NewsForm/NewsForm.vue";
 import GET_POSTS from "../../gql/Posts.gql";
@@ -102,6 +106,7 @@ export default {
     },
   },
   computed: {
+    ...mapGetters(["loggedIn"]),
     orderedItems: function () {
       let orderedItems = [...this.items];
       let compareVotes = (a, b) => b.votes - a.votes;

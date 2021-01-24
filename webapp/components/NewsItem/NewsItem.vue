@@ -2,14 +2,15 @@
   <div>
     <div class="item-title">{{ item.title }} ({{ item.votes }})</div>
     <div class="item-buttons">
-      <button @click="upvote">Upvote</button>
-      <button @click="downvote">Downvote</button>
-      <button @click="remove">Remove</button>
+      <button v-if="loggedIn" @click="upvote">Upvote</button>
+      <button v-if="loggedIn" @click="downvote">Downvote</button>
+      <button v-if="isAuthor" @click="remove">Remove</button>
     </div>
   </div>
 </template>
 
 <script>
+import { mapGetters, mapState } from "vuex";
 export default {
   props: ["item"],
   methods: {
@@ -21,6 +22,13 @@ export default {
     },
     remove: function () {
       this.$emit("remove", this.item);
+    },
+  },
+  computed: {
+    ...mapGetters(["loggedIn"]),
+    ...mapState(["currentUser"]),
+    isAuthor: function () {
+      return this.currentUser === this.item.author.id;
     },
   },
 };

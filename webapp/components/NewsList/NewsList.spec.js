@@ -57,7 +57,7 @@ describe("NewsList.vue", () => {
             loggedIn: () => false,
         },
         mutations: {
-            setToken(token, state) {},
+            setToken() {},
         },
     });
 

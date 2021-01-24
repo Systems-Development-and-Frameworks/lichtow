@@ -5,6 +5,7 @@
       <button v-if="loggedIn" @click="upvote">Upvote</button>
       <button v-if="loggedIn" @click="downvote">Downvote</button>
       <button v-if="isAuthor" @click="remove">Remove</button>
+      <button v-if="isAuthor" @click="edit">Edit</button>
     </div>
   </div>
 </template>
@@ -22,6 +23,9 @@ export default {
     },
     remove: function () {
       this.$emit("remove", this.item);
+    },
+    edit: function () {
+      this.$emit("edit", this.item);
     },
   },
   computed: {

@@ -1,0 +1,7 @@
+#import "./PostFragment.gql"
+
+mutation delete($id: ID!) {
+    delete(id: $id) {
+        ...Post
+    }
+}

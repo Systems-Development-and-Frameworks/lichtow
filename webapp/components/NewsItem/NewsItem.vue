@@ -14,28 +14,24 @@ export default {
   props: ["item"],
   methods: {
     upvote: function () {
-      let item = { ...this.item };
-      item.votes++;
-      this.$emit("updateItem", item);
+      this.$emit("upvote");
     },
     downvote: function () {
-      let item = { ...this.item };
-      item.votes--;
-      this.$emit("updateItem", item);
+      this.$emit("downvote");
     },
     remove: function () {
-      this.$emit("removeItem", this.item);
+      this.$emit("remove", this.item);
     },
   },
 };
 </script>
 
 <style>
-.item-title {
+.post-title {
   font-size: 24px;
   text-align: center;
 }
-.item-buttons {
+.post-buttons {
   padding: 15px 0;
 }
 </style>

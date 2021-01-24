@@ -24,7 +24,7 @@ export const permissions = shield(
     {
         Query: {
             "*": forbidden,
-            posts: isAuthenticated,
+            posts: allow,
             users: isAuthenticated,
         },
         Mutation: {
@@ -39,6 +39,5 @@ export const permissions = shield(
     },
     {
         allowExternalErrors: true,
-        fallbackRule: isAuthenticated,
     }
 );

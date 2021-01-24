@@ -36,6 +36,9 @@ export default {
           password: this.password,
           apolloClient: this.$apollo,
         });
+        this.$router.push({
+          path: "/",
+        });
         this.invalidCredentials = false;
       } catch (error) {
         this.invalidCredentials = true;

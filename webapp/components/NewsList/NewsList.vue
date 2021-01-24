@@ -21,6 +21,7 @@
 </template>
 
 <script>
+import { mapMutations } from "vuex";
 import NewsItem from "../NewsItem/NewsItem.vue";
 import NewsForm from "../NewsForm/NewsForm.vue";
 export default {
@@ -46,7 +47,11 @@ export default {
       descending: true,
     };
   },
+  mounted: function () {
+    this.setToken(this.$apolloHelpers.getToken());
+  },
   methods: {
+    ...mapMutations(["setToken"]),
     updateItem: function (item) {
       if (item && item.id) {
         this.items = this.items.filter((el) => el.id !== item.id);

@@ -1,4 +1,5 @@
 import login from "../gql/login.gql";
+import jwt_decode from "jwt-decode";
 
 export const state = () => ({
     token: null,
@@ -15,8 +16,8 @@ export const mutations = {
     setToken(state, token) {
         state.token = token;
         if (token) {
-            //TODO: decode jwt to get user id
-            state.currentUser = "USER";
+            let { userId } = jwt_decode(token);
+            state.currentUser = userId;
         } else {
             state.currentUser = null;
         }

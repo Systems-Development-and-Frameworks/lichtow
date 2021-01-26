@@ -1,7 +1,0 @@
-#import "./PostFragment.gql"
-
-mutation upvote($id: ID!) {
-    upvote(id: $id) {
-        ...Post
-    }
-}

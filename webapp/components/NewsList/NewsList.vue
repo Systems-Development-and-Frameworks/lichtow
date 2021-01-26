@@ -29,11 +29,13 @@
 import { mapMutations, mapGetters } from "vuex";
 import NewsItem from "../NewsItem/NewsItem.vue";
 import NewsForm from "../NewsForm/NewsForm.vue";
-import GET_POSTS from "../../gql/Posts.gql";
-import WRITE_POST from "../../gql/WritePost.gql";
-import DELETE_POST from "../../gql/DeletePost.gql";
-import UPVOTE_POST from "../../gql/UpvotePost.gql";
-import DOWNVOTE_POST from "../../gql/DownvotePost.gql";
+import { GET_POSTS } from "../../gql/queries.gql";
+import {
+  DOWNVOTE_POST,
+  UPVOTE_POST,
+  DELETE_POST,
+  WRITE_POST,
+} from "../../gql/mutations.gql";
 export default {
   apollo: {
     items: {

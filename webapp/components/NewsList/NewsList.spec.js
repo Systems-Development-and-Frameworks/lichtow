@@ -4,7 +4,7 @@ import Vuex from "vuex";
 import { createMockClient } from "mock-apollo-client";
 import NewsList from "./NewsList.vue";
 import NewsItem from "../NewsItem/NewsItem.vue";
-import allPostsQuery from "../../gql/Posts.gql";
+import { GET_POSTS } from "../../gql/queries.gql";
 
 const postListMock = {
     data: {
@@ -69,7 +69,7 @@ describe("NewsList.vue", () => {
             allPostsQueryHandler: jest.fn().mockResolvedValue({ ...postListMock }),
             ...handlers,
         };
-        mockClient.setRequestHandler(allPostsQuery, requestHandlers.allPostsQueryHandler);
+        mockClient.setRequestHandler(GET_POSTS, requestHandlers.allPostsQueryHandler);
         apolloProvider = new VueApollo({ defaultClient: mockClient });
         const getToken = jest.fn();
         wrapper = mount(NewsList, {

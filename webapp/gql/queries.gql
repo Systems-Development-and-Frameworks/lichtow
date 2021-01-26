@@ -1,6 +1,5 @@
 #import "./PostFragment.gql"
-
-query posts {
+query GET_POSTS {
     posts {
         ...Post
     }

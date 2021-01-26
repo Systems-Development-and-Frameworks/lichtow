@@ -8,7 +8,7 @@ export const state = () => ({
 
 export const getters = {
     loggedIn(state) {
-        return !!state.token;
+        return !!state.token && !!state.currentUser;
     },
 };
 

@@ -1,32 +1,37 @@
 <template>
   <div>
-    <div v-if="loggedIn">You are Logged in</div>
     <form onsubmit="event.preventDefault();">
       <input
+        id="email"
         type="email"
         aria-label="Email"
         v-model="email"
         placeholder="Email"
       />
       <input
+        id="password"
         type="password"
         aria-label="Password"
         v-model="password"
         placeholder="Password"
       />
-      <div v-if="invalidCredentials">Falsche Email oder Passwort</div>
-      <input type="submit" aria-label="Login" value="Login" @click="submit" />
+      <div id="invCredentialsMsg" v-if="invalidCredentials">
+        Falsche Email oder Passwort
+      </div>
+      <input
+        id="submit"
+        type="submit"
+        aria-label="Login"
+        value="Login"
+        @click="submit"
+      />
     </form>
   </div>
 </template>
 
 <script>
-import { mapState, mapGetters, mapActions } from "vuex";
+import { mapActions } from "vuex";
 export default {
-  computed: {
-    ...mapGetters(["loggedIn"]),
-    ...mapState(["currentUser"]),
-  },
   methods: {
     ...mapActions(["login"]),
     submit: async function () {

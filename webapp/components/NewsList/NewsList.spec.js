@@ -101,7 +101,7 @@ describe("NewsList.vue", () => {
             createComponent({
                 allPostsQueryHandler: jest.fn().mockResolvedValue({ data: { posts: [] } }),
             });
-            await wrapper.vm.$nextTick();
+            await localVue.nextTick();
 
             expect(wrapper.find("#emptyListMessage").text()).toBe("The list is empty :(");
         });
@@ -109,7 +109,7 @@ describe("NewsList.vue", () => {
     describe("not empty", () => {
         beforeEach(async () => {
             createComponent();
-            await wrapper.vm.$nextTick();
+            await localVue.nextTick();
         });
         it("does not render empty list message when item list is filled", () => {
             expect(wrapper.find("#emptyListMessage").exists()).toBe(false);

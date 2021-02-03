@@ -1,4 +1,4 @@
-import { LOGIN } from "../gql/login.gql";
+import login from "../gql/login.gql";
 import jwt_decode from "jwt-decode";
 
 export const state = () => ({
@@ -26,7 +26,7 @@ export const mutations = {
 
 export const actions = {
     async login({ commit }, { email, password, apolloClient }) {
-        const { data } = await apolloClient.mutate({ mutation: LOGIN, variables: { email, password } });
+        const { data } = await apolloClient.mutate({ mutation: login, variables: { email, password } });
         await this.$apolloHelpers.onLogin(data.login);
         commit("setToken", data.login);
     },

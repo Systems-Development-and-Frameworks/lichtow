@@ -9,5 +9,6 @@ module.exports = {
     transform: {
         "^.+\\.js$": "babel-jest",
         ".*\\.(vue)$": "vue-jest",
+        "\\.(gql|graphql)$": "jest-transform-graphql",
     },
 };

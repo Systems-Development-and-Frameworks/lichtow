@@ -2,40 +2,48 @@
   <div>
     <div class="item-title">{{ item.title }} ({{ item.votes }})</div>
     <div class="item-buttons">
-      <button @click="upvote">Upvote</button>
-      <button @click="downvote">Downvote</button>
-      <button @click="remove">Remove</button>
+      <button v-if="loggedIn" @click="upvote">Upvote</button>
+      <button v-if="loggedIn" @click="downvote">Downvote</button>
+      <button v-if="isAuthor" @click="remove">Remove</button>
+      <button v-if="isAuthor" @click="edit">Edit</button>
     </div>
   </div>
 </template>
 
 <script>
+import { mapGetters, mapState } from "vuex";
 export default {
   props: ["item"],
   methods: {
     upvote: function () {
-      let item = {...this.item};
-      item.votes++;
-      this.$emit("updateItem", item);
+      this.$emit("upvote");
     },
     downvote: function () {
-       let item = {...this.item};
-      item.votes--;
-      this.$emit("updateItem", item);
+      this.$emit("downvote");
     },
     remove: function () {
-      this.$emit("removeItem", this.item);
+      this.$emit("remove", this.item);
+    },
+    edit: function () {
+      this.$emit("edit", this.item);
+    },
+  },
+  computed: {
+    ...mapGetters(["loggedIn"]),
+    ...mapState(["currentUser"]),
+    isAuthor: function () {
+      return this.currentUser === this.item.author.id;
     },
   },
 };
 </script>
 
 <style>
-.item-title {
+.post-title {
   font-size: 24px;
   text-align: center;
 }
-.item-buttons {
+.post-buttons {
   padding: 15px 0;
 }
 </style>

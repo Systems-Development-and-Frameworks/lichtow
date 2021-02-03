@@ -5,8 +5,9 @@
       <div v-for="item in orderedItems" :key="item.id">
         <NewsItem
           class="news-item"
-          @updateItem="updateItem"
-          @removeItem="removeItem"
+          @upvote="upvote(item)"
+          @downvote="downvote(item)"
+          @remove="remove(item)"
           :item="item"
         ></NewsItem>
       </div>
@@ -15,65 +16,99 @@
       </div>
       <button id="reverseOrder" @click="reverseOrder">Reverse order</button>
 
-      <NewsForm class="news-form" @createItem="createItem"></NewsForm>
+      <NewsForm
+        v-if="loggedIn"
+        class="news-form"
+        @createItem="createItem"
+      ></NewsForm>
     </div>
   </div>
 </template>
 
 <script>
+import { mapMutations, mapGetters } from "vuex";
 import NewsItem from "../NewsItem/NewsItem.vue";
 import NewsForm from "../NewsForm/NewsForm.vue";
+import { GET_POSTS } from "../../gql/queries.gql";
+import {
+  DOWNVOTE_POST,
+  UPVOTE_POST,
+  DELETE_POST,
+  WRITE_POST,
+} from "../../gql/mutations.gql";
 export default {
+  apollo: {
+    items: {
+      query: GET_POSTS,
+      update({ posts }) {
+        return posts;
+      },
+    },
+  },
   name: "app",
   components: {
     NewsItem,
     NewsForm,
   },
-  props: {
-    initialItems: {
-      type: Array,
-      default: () => {
-        return [
-          { id: 1, title: "VueJS", votes: 0 },
-          { id: 2, title: "Hello world!", votes: 0 },
-        ];
-      },
-    },
-  },
   data: function () {
     return {
-      items: [...this.initialItems],
+      items: [],
       descending: true,
     };
   },
+  mounted: function () {
+    this.setToken(this.$apolloHelpers.getToken());
+  },
   methods: {
-    updateItem: function (item) {
-      if (item && item.id) {
-        this.items = this.items.filter((el) => el.id !== item.id);
-        this.items = [...this.items, item];
-      }
-    },
-    removeItem: function (item) {
-      if (item && item.id) {
-        this.items = this.items.filter((el) => el.id !== item.id);
-      }
-    },
-    createItem: function (newTitle) {
-      let newId = this.generateNewId();
-      this.items = [...this.items, { id: newId, title: newTitle, votes: 0 }];
-    },
-    generateNewId: function () {
-      let newId = 1;
-      this.items.forEach((item) => {
-        if (item.id >= newId) newId = item.id + 1;
+    ...mapMutations(["setToken"]),
+    upvote(item) {
+      this.$apollo.mutate({
+        mutation: UPVOTE_POST,
+        variables: {
+          id: item.id,
+        },
       });
-      return newId;
     },
-    reverseOrder: function () {
+    downvote(item) {
+      this.$apollo.mutate({
+        mutation: DOWNVOTE_POST,
+        variables: {
+          id: item.id,
+        },
+      });
+    },
+    remove(item) {
+      this.$apollo.mutate({
+        mutation: DELETE_POST,
+        variables: {
+          id: item.id,
+        },
+        update: (store, { data: { delete: deleted } }) => {
+          const data = store.readQuery({ query: GET_POSTS });
+          data.posts = data.posts.filter((el) => el.id !== deleted.id);
+          store.writeQuery({ query: GET_POSTS, data });
+        },
+      });
+    },
+    createItem(newTitle) {
+      this.$apollo.mutate({
+        mutation: WRITE_POST,
+        variables: {
+          post: { title: newTitle },
+        },
+        update: (store, { data: { write } }) => {
+          const data = store.readQuery({ query: GET_POSTS });
+          data.posts.push(write);
+          store.writeQuery({ query: GET_POSTS, data });
+        },
+      });
+    },
+    reverseOrder() {
       this.descending = !this.descending;
     },
   },
   computed: {
+    ...mapGetters(["loggedIn"]),
     orderedItems: function () {
       let orderedItems = [...this.items];
       let compareVotes = (a, b) => b.votes - a.votes;

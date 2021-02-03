@@ -20,3 +20,4 @@ storybook-static
 
 ### Nuxt.js###
 .nuxt
+static/sw.js

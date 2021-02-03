@@ -23,14 +23,38 @@ export default {
     buildModules: [
         // https://go.nuxtjs.dev/eslint
         "@nuxtjs/eslint-module",
+        "@nuxtjs/pwa",
     ],
 
     // Modules (https://go.nuxtjs.dev/config-modules)
     modules: [
         // https://go.nuxtjs.dev/pwa
         "@nuxtjs/pwa",
+        "@nuxtjs/apollo",
     ],
+
+    apollo: {
+        clientConfigs: {
+            default: {
+                httpEndpoint: "http://localhost:4000",
+            },
+        },
+        // Sets the authentication type for any authorized request.
+        authenticationType: "Bearer",
+
+        // Token name for the cookie which will be set in case of authentication
+        tokenName: "apollo-token",
+    },
 
     // Build Configuration (https://go.nuxtjs.dev/config-build)
     build: {},
+    pwa: {
+        manifest: {
+            name: "Hackernews",
+            start_url: "/",
+            display: "standalone",
+            background: "#ffffff",
+            theme_color: "#90EE90",
+        },
+    },
 };

@@ -71,16 +71,6 @@ describe("queries", () => {
 
         let postQuery = () => query({ query: POSTS });
 
-        it("throws error when user is not authorised", async () => {
-            userId = null;
-            await expect(postQuery()).resolves.toMatchObject({
-                data: {
-                    posts: null,
-                },
-                errors: [expect.objectContaining({ message: "Not Authorised!" })],
-            });
-        });
-
         it("returns empty array", async () => {
             await expect(postQuery()).resolves.toMatchObject({
                 errors: undefined,
